@@ -1,0 +1,25 @@
+{
+  "name": "upolbot",
+  "version": "1.0.0",
+  "description": "Facebook Messenger chatbot for students of Palacky University Olomouc",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://pnemi@github.com/pnemi/UPOLBot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pnemi/UPOLBot/issues"
+  },
+  "homepage": "https://github.com/pnemi/UPOLBot#readme",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "request": "^2.79.0"
+  }
+}
