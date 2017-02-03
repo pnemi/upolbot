@@ -1,1 +1,9 @@
 node_modules/
+docs/
+test/
+*.sketch
+.DS_Store
+.tern-project
+ngrok
+vault
+config/env.json

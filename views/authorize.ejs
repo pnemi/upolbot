@@ -1,0 +1,57 @@
+<html>
+<head>
+  <title>OAuth Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <style>
+  div { margin: 10px 0px 10px 0px; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-md-6 col-md-offset-3">
+
+        <h1>Přihlášení do STAG</h1>
+
+        <form action="/authorize" method="post" id="stag-auth">
+          <div class="form-group">
+            <label for="login">Uživatelské jméno</label>
+            <input type="text" class="form-control" id="login" name="login">
+          </div>
+
+          <div class="form-group">
+            <label for="password">Heslo</label>
+            <input type="password" class="form-control" id="password" name="password">
+          </div>
+
+          <input type="hidden" id="redirect" name="redirect" value="<%= redirectURISuccess %>">
+
+          <div class="form-group">
+            <button type="submit" class="btn btn-default">Přihlásit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    This should be a login page. If the user successfully logs, they should
+    be redirect to this link: Complete Account Link</a>
+  </div>
+
+  <div>
+    Account linking token: <%= accountLinkingToken %>
+  </div>
+
+  <div>
+    Redirect URI: <%= redirectURI %>
+  </div>
+
+  <div>
+    Redirect URI Successful: <%= redirectURISuccess %>
+  </div>
+
+</body>
+</html>

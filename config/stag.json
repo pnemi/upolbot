@@ -1,0 +1,10 @@
+{
+  "getStagUserListForExternalLogin": {
+    "url": "users/getStagUserListForExternalLogin",
+    "params": ["externalLogin"]
+  },
+  "getStudentInfo": {
+    "url": "student/getStudentInfo",
+    "params": ["osCislo"]
+  }
+}
