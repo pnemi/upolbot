@@ -3,31 +3,44 @@
 const
   messenger = require("./messenger"),
   moment = require("moment"),
-  formatter = require("./formatter");
+  db = require("./db"),
+  formatter = require("./formatter"),
+  stag = require("./stag");
 
 exports.greeting = (sender) => {
   messenger.send({text: `Vítá Tě UPOL Asistent!`}, sender);
 };
 
 exports.help = (sender) => {
-  messenger.send({text: `Potřebuješ pomoc?`}, sender);
+  //messenger.send({text: `Potřebuješ pomoc?`}, sender);
+  messenger.send({text:
+    "• týden (Je sudý nebo lichý týden?)\n\
+    • getStagUserForActualUser\n"
+  }, sender);
 };
 
 exports.stagAuth = (sender) => {
 
-  // if not logged in
-  // login()
-  // else
-  // logout()
+  db.existsStudentByPSID(sender).then(exists =>{
+    if (exists) {
+      messenger.send(formatter.formatLogout(), sender);
+    } else {
+      messenger.send(formatter.formatLogin(), sender);
+    }
+  }).catch(() => {
+    messenger.send({text: "Něco se 💩 a nemohl jsem tě odhlásit, zkus to prosím znovu. Sorry 😕"}, sender);
+  });
 
 };
 
-exports.login = (sender) => {
-  messenger.send(formatter.formatLogin(), sender);
-};
-
-exports.logout = (sender) => {
-  messenger.send(formatter.formatLogout(), sender);
+exports.loggedOut = (sender, success) => {
+  let message;
+  if (success === "YES") {
+    message = "Odhlásil jsem tě 👌 Budeš-li se chtít znovu přihlásit, zvol volbu STAG Účet v menu."
+  } else {
+    message = "Něco se 💩 a nemohl jsem tě odhlásit, zkus to prosím znovu. Sorry 😕"
+  }
+  messenger.send({text: message}, sender);
 };
 
 exports.repeat = (sender, values) => {

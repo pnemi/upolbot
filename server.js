@@ -4,9 +4,12 @@
 const
   express = require("express"),
   bodyParser = require("body-parser"),
+  hat = require("hat"),
   messenger = require("./modules/messenger"),
   processor = require("./modules/processor"),
   handlers = require("./modules/handlers"),
+  stag = require("./modules/stag"),
+  db = require("./modules/db"),
   env = require("./modules/env");
 
 var app = express();
@@ -31,50 +34,68 @@ app.get("/webhook", function (req, res) {
 });
 
 app.post("/authorize", (req, res, next) => {
-  console.log(req.body.login);
-  console.log(req.body.password);
-  res.redirect(req.body.redirect);
-});
 
-app.get("/authorize", function(req, res) {
-  var accountLinkingToken = req.query.account_linking_token;
-  var redirectURI = req.query.redirect_uri;
+  let auth = {
+    user: req.body.login,
+    password: req.body.password
+  };
 
-  // Authorization Code should be generated per user by the developer. This will
-  // be passed to the Account Linking callback.
-  var authCode = "1234567890";
+  let promStagUser = stag.stagRequest("getStagUserForActualUser", [], auth);
+  let promPSID = messenger.getPSID(req.body.accountLinkingToken);
 
-  // Redirect users to this URI on successful login
-  var redirectURISuccess = redirectURI + "&authorization_code=" + authCode;
+  Promise.all([promStagUser, promPSID]).then(values => {
+    let stagNumber = values[0].userName;
+    let psid = values[1].recipient;
+    db.insertStudent(psid, auth.user, auth.password, stagNumber).then(() => {
+      res.redirect(req.body.redirectURISuccess);
+    }).catch(reason => {
+      console.log(reason);
+    });
+  }).catch(reason => {
+    if (reason === "UNAUTHORIZED") {
 
-  res.render("authorize", {
-    accountLinkingToken: accountLinkingToken,
-    redirectURI: redirectURI,
-    redirectURISuccess: redirectURISuccess
+      let locals = {
+        accountLinkingToken: req.body.accountLinkingToken,
+        redirectURI: req.body.redirectURI,
+        redirectURISuccess: req.body.redirectURISuccess,
+        authFailed: true
+      };
+
+      res.render("authorize", locals);
+    }
   });
 });
 
-function receivedAccountLink(event) {
-  var senderID = event.sender.id;
-  var recipientID = event.recipient.id;
+app.get("/authorize", function(req, res) {
 
-  var status = event.account_linking.status;
-  var authCode = event.account_linking.authorization_code;
+  let accountLinkingToken = req.query.account_linking_token;
+  let redirectURI = req.query.redirect_uri;
+  let authCode = hat();
+  let redirectURISuccess = redirectURI + "&authorization_code=" + authCode;
 
-  console.log("Received account link event with for user %d with status %s " +
-    "and auth code %s ", senderID, status, authCode);
-}
-
-let receivedPostback = (payload, sender) => {
-
-  let payloads = {
-    GREETING_PAYLOAD: "greeting",
-    HELP_PAYLOAD: "help",
-    STAG_AUTH_PAYLOAD: "stagAuth",
+  let locals = {
+    accountLinkingToken: accountLinkingToken,
+    redirectURI: redirectURI,
+    redirectURISuccess: redirectURI + "&authorization_code=" + authCode,
+    authFailed: false
   };
-  let handler = payloads[payload];
 
-  handlers[handler](sender);
+  res.render("authorize", locals);
+
+});
+
+let receivedAccountLink = event => {
+
+  let sender = event.sender.id;
+  let status = event.account_linking.status;
+
+  if (status === "unlinked") {
+    db.deleteStudentByPSID(sender).then(() => {
+      handlers.loggedOut(sender, "YES")
+    }).catch(error => {
+      handlers.loggedOut(sender, error);
+    });
+  }
 
 };
 
@@ -93,19 +114,15 @@ app.post("/webhook", function (req, res) {
         let message = messagingEvent.message.text;
 
         let result = processor.match(message);
+        callHandler(result, sender);
 
-        if (result) {
-          let handler = handlers[result.handler];
-          if (handler && typeof handler === "function") {
-            handler(sender, result.values);
-          } else {
-            console.log("Handler " + result.handler + " is not defined");
-          }
-        }
       } else if (messagingEvent.account_linking) {
         receivedAccountLink(messagingEvent);
       } else if (messagingEvent.postback) {
-        receivedPostback(messagingEvent.postback.payload, sender);
+
+        let payload = messagingEvent.postback.payload;
+        let result = processor.matchPayload(payload);
+        callHandler(result, sender);
       }
 
       res.sendStatus(200);
@@ -113,6 +130,17 @@ app.post("/webhook", function (req, res) {
   });
 
 });
+
+let callHandler = (result, sender) => {
+  if (result) {
+    let handler = handlers[result.handler];
+    if (handler && typeof handler === "function") {
+      handler(sender, result.values);
+    } else {
+      console.log("Handler " + result.handler + " is not defined");
+    }
+  }
+};
 
 app.listen(app.get("port"), function () {
     console.log("Express server listening on port " + app.get("port"));

@@ -3,8 +3,6 @@
   "MESSENGER_VALIDATION_TOKEN": "",
   "MESSENGER_PAGE_ACCESS_TOKEN": "" ,
   "SERVER_URL": "",
-  "PG_USER": "",
-  "PG_DATABASE": "",
-  "PG_PASSWORD": "",
-  "PG_PORT": ""
+  "DB_URL": "",
+  "CIPHER_KEY": ""
 }

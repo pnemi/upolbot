@@ -1,10 +1,88 @@
 {
   "getStagUserListForExternalLogin": {
+    "auth_req": false,
     "url": "users/getStagUserListForExternalLogin",
     "params": ["externalLogin"]
   },
+  "getStagUserForActualUser": {
+    "note": "Na ověření přihlášení",
+    "auth_req": true,
+    "url": "help/getStagUserForActualUser",
+    "params": []
+  },
   "getStudentInfo": {
+    "auth_req": false,
     "url": "student/getStudentInfo",
+    "params": ["osCislo"]
+  },
+  "getHarmonogramRoku": {
+    "auth_req": false,
+    "url": "kalendar/getHarmonogramRoku",
+    "params": []
+  },
+  "getKvalifikacniPrace": {
+    "auth_req": false,
+    "url": "kvalifikacniprace/getKvalifikacniPrace",
+    "params": ["osCislo"]
+  },
+  "getRozvrhByStudent": {
+    "auth_req": false,
+    "url": "rozvrhy/getRozvrhByStudent",
+    "params": ["osCislo"]
+  },
+  "getRozvrhByStudentICAL": {
+    "auth_req": false,
+    "url": "rozvrhy/getRozvrhByStudentICAL",
+    "params": ["osCislo"]
+  },
+  "getRozvrhByStudentPDF": {
+    "auth_req": false,
+    "url": "rozvrhy/getRozvrhByStudentPDF",
+    "params": ["osCislo"]
+  },
+  "getPredmetInfo": {
+    "auth_req": false,
+    "url": "predmety/getPredmetInfo",
+    "params": ["katedra", "zkratka"]
+  },
+  "getTerminyProStudenta": {
+    "auth_req": true,
+    "url": "terminy/getTerminyProStudenta",
+    "params": ["osCislo"]
+  },
+  "zapisStudentaNaTermin": {
+    "auth_req": true,
+    "url": "terminy/zapisStudentaNaTermin",
+    "params": ["osCislo", "termIdno"]
+  },
+  "odhlasStudentaZTerminu": {
+    "auth_req": true,
+    "url": "terminy/odhlasStudentaZTerminu",
+    "params": ["osCislo", "termIdno"]
+  },
+  "getOborInfo": {
+    "auth_req": false,
+    "url": "programy/getOborInfo",
+    "params": ["oborIdno"]
+  },
+  "getPlanyOboru": {
+    "auth_req": false,
+    "url": "programy/getPlanyOboru",
+    "params": ["oborIdno"]
+  },
+  "getBlokyPlanu": {
+    "auth_req": false,
+    "url": "programy/getBlokyPlanu",
+    "params": ["stplIdno"]
+  },
+  "getPredmetyByBlok": {
+    "auth_req": false,
+    "url": "predmety/getPredmetyByBlok",
+    "params": ["blokIdno"]
+  },
+  "getZnamkyByStudent": {
+    "auth_req": true,
+    "url": "znamky/getZnamkyByStudent",
     "params": ["osCislo"]
   }
 }

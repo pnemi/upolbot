@@ -20,7 +20,18 @@ exports.PAGE_ACCESS_TOKEN = process.env.MESSENGER_PAGE_ACCESS_TOKEN ||
 exports.SERVER_URL = process.env.SERVER_URL ||
                      env.SERVER_URL;
 
-if (!(this.APP_SECRET && this.VALIDATION_TOKEN && this.PAGE_ACCESS_TOKEN && this.SERVER_URL)) {
+exports.DB_URL = process.env.DB_URL ||
+                 env.DB_URL;
+
+exports.CIPHER_KEY = process.env.CIPHER_KEY ||
+                     env.CIPHER_KEY;
+
+if (!(this.APP_SECRET &&
+      this.VALIDATION_TOKEN &&
+      this.PAGE_ACCESS_TOKEN &&
+      this.SERVER_URL &&
+      this.DB_URL &&
+      this.CIPHER_KEY)) {
   console.error("Missing config values");
   process.exit(1);
 }

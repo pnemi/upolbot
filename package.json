@@ -19,9 +19,12 @@
   "homepage": "https://github.com/pnemi/UPOLBot#readme",
   "dependencies": {
     "body-parser": "^1.15.2",
+    "crypto": "0.0.3",
+    "ejs": "^2.5.5",
     "express": "^4.14.0",
-    "request": "^2.79.0",
+    "hat": "0.0.3",
     "moment": "^2.17.1",
-    "ejs": "^2.5.5"
+    "pg": "^6.1.2",
+    "request": "^2.79.0"
   }
 }
