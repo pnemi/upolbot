@@ -40,6 +40,11 @@
     "url": "rozvrhy/getRozvrhByStudentPDF",
     "params": ["osCislo"]
   },
+  "najdiPredmety": {
+    "auth_req": false,
+    "url": "predmety/najdiPredmety",
+    "params": ["nazev"]
+  },
   "getPredmetInfo": {
     "auth_req": false,
     "url": "predmety/getPredmetInfo",

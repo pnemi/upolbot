@@ -14,9 +14,15 @@ let getURL = (action, params) => {
             uri[action].url +
             "?outputFormat=JSON";
 
-  params.forEach(param => {
-    url += `&${param}=${args[param]}`;
-  });
+  for (let param in params) {
+    // search wildcards
+    if (uri[action].url === uri.najdiPredmety &&
+        param === "nazev") {
+      url += `&${param}=%25${params[param]}%25`;
+    } else {
+      url += `&${param}=${params[param]}`;
+    }
+  }
 
   return url;
 };
@@ -30,7 +36,7 @@ let getOptions = (action, params, auth, sender) => {
   return options;
 };
 
-exports.stagRequest = (action, params, auth, sender) => {
+exports.request = (action, params, auth, sender) => {
   return new Promise((resolve, reject) => {
     request(
       getOptions(action, params, auth, sender)

@@ -22,6 +22,32 @@ exports.send = (message, recipient) => {
   });
 };
 
+exports.sendPromise = (message, recipient) => {
+
+  return new Promise((resolve, reject) => {
+
+  request({
+    url: "https://graph.facebook.com/v2.6/me/messages",
+    qs: {access_token: env.PAGE_ACCESS_TOKEN},
+    method: "POST",
+    json: {
+      recipient: {id: recipient},
+      message: message,
+    }
+  }, (error, response) => {
+    if (error) {
+      console.log("Error sending message: ", error);
+      reject(error);
+    } else if (response.body.error) {
+      console.log("Error: ", response.body.error);
+    } else {
+      resolve();
+    }
+  });
+
+  });
+};
+
 exports.getPSID = (accountLinkingToken) => {
 
   return new Promise((resolve, reject) => {

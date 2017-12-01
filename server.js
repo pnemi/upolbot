@@ -40,7 +40,7 @@ app.post("/authorize", (req, res, next) => {
     password: req.body.password
   };
 
-  let promStagUser = stag.stagRequest("getStagUserForActualUser", [], auth);
+  let promStagUser = stag.request("getStagUserForActualUser", [], auth);
   let promPSID = messenger.getPSID(req.body.accountLinkingToken);
 
   Promise.all([promStagUser, promPSID]).then(values => {
@@ -113,8 +113,13 @@ app.post("/webhook", function (req, res) {
       if (messagingEvent.message && messagingEvent.message.text) {
         let message = messagingEvent.message.text;
 
-        let result = processor.match(message);
-        callHandler(result, sender);
+        //let result = processor.match(message);
+        try {
+          let result = JSON.parse(message);
+          callHandler(result, sender);
+        } catch(e) {
+          console.log(e);
+        }
 
       } else if (messagingEvent.account_linking) {
         receivedAccountLink(messagingEvent);
@@ -135,7 +140,7 @@ let callHandler = (result, sender) => {
   if (result) {
     let handler = handlers[result.handler];
     if (handler && typeof handler === "function") {
-      handler(sender, result.values);
+      handler(sender, result.stag_params, result.query_params);
     } else {
       console.log("Handler " + result.handler + " is not defined");
     }

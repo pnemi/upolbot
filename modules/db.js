@@ -17,7 +17,13 @@ const queries = {
   deleteStudentByPSID: "DELETE FROM students WHERE fb_psid=$1"
 }
 
-client.connect();
+
+client.connect(error => {
+  if (error) {
+    console.log("Database error: Unable to connect");
+    throw error;
+  }
+});
 
 exports.insertStudent = (fb_psid, stag_username, stag_password, stag_number) => {
   return new Promise((resolve, reject) => {
@@ -60,6 +66,8 @@ exports.selectStudentWithAuthByPSID = (fb_psid) => {
       if (error) {
         console.log("Error selectStudentWithAuthByPSID query: ", error);
         reject(error);
+      } else if (result.rowCount === 0) {
+        resolve("NOT_FOUND");
       } else {
         result.rows[0].stag_password = crypt.decrypt(result.rows[0].stag_password);
         resolve(result.rows[0]);
@@ -77,6 +85,8 @@ exports.selectStudentByPSID = (fb_psid) => {
       if (error) {
         console.log("Error selectStudentByPSID query: ", error);
         reject(error);
+      } else if (result.rowCount === 0) {
+        resolve("NOT_FOUND");
       } else {
         resolve(result.rows[0]);
       }

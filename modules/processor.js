@@ -1,16 +1,26 @@
 "use strict";
 
 const HANDLERS = {
-  "login": {handler: "login"},
-  "logout": {handler: "logout"},
-  "hey": {handler: "hey"},
-  "týden": {handler: "weekOddOrEven"}
+  "login": "login",
+  "logout": "logout",
+  "týden": "weekOddOrEven",
+  "práce": "thesis",
+  "rozvrh": "schedule",
+  "predmet": "subject"
 };
 
 let match = text => {
 
-  let result = HANDLERS[text.toLowerCase()];
-  return result || {handler: "repeat", values: text};
+  let split = text.split(" ");
+  let handler = split.shift().toLowerCase();
+  let values = split;
+
+  let result = {
+    handler: HANDLERS[handler],
+    values: values
+  };
+
+  return result;
 
 };
 
