@@ -1,29 +1,26 @@
+const
+  TokenType = require("./TokenType").TokenType;
+
 exports.intents = [
   {
-    name: "weekOddOrEven",
-    keywords: [
-      "sud",
-      "lich",
-      "tyd"
-    ]
+    name: "greeting"
   },
   {
-    name: "diploma",
-    keywords: [
-      "diplom",
-      "pra"
-    ]
+    name: "thanks"
+  },
+  {
+    name: "weekOddOrEven"
+  },
+  {
+    name: "diploma"
   },
   {
     name: "schedule",
-    keywords: [
-      "rozvrh"
-    ]
+    parameters: {
+      "date": TokenType.DATE
+    }
   },
   {
-    name: "subject",
-    keywords: [
-      "predme"
-    ]
+    name: "subject"
   }
 ];
