@@ -4,8 +4,11 @@ const
 
 const classes = trainingSet.map(item => item.class);
 
+// TODO: Put trained corpus in db
+
 const calcWordsOccursInSentence = (stats, sentence) => {
-  tokenize(sentence).forEach(word => {
+  let tokens = tokenize(sentence);
+  tokens.forEach(word => {
     if (stats.hasOwnProperty(word) ) {
       stats[word] = stats[word] + 1;
     } else {
