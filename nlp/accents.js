@@ -1,23 +1,6 @@
-
-// const AccentsRdemovalMap = {
-//   "á":  "a",
-//   "č":  "c",
-//   "ď":  "d",
-//   "é":  "e",
-//   "ě":  "e",
-//   "í":  "i",
-//   "ň":  "n",
-//   "ó":  "o",
-//   "š":  "s",
-//   "ť":  "t",
-//   "ú":  "u",
-//   "ů":  "u",
-//   "ý":  "y",
-//   "ř":  "r",
-//   "ž":  "z"
-// };
-
-
+/**
+ * Hand-written accent replacement dictionary.
+ */
 const AccentsRemovalRules = [
   { base : "a", letters : "á" },
   { base : "c", letters : "č" },
@@ -37,16 +20,19 @@ const AccentsRemovalRules = [
 // O(1) lookup
 const AccentsRemovalMap = new Map();
 
-// converts rule { base : "e", letters : "éě" }
-// to map key value pairs {"é" => "e"} and {"ě" => "e"}
-for (let rule of AccentsRemovalRules) {
-  for (let letter of rule.letters) {
-    // AccentsRemovalMap.set(letter.toUpperCase(), rule.base.toUpperCase()); // uppercased variant
-    AccentsRemovalMap.set(letter, rule.base);
+/**
+ * Converts rule { base : "e", letters : "éě" }
+ * to map key value pairs {"é" => "e"} and {"ě" => "e"}
+ */
+const initRulesMap = () => {
+  for (let rule of AccentsRemovalRules) {
+    for (let letter of rule.letters) {
+      AccentsRemovalMap.set(letter, rule.base);
+    }
   }
-}
+};
 
-exports.removeAccents = word => {
+const remove = word => {
   let result = Array(word.length);
   for (let i in word) {
     let letter = word[i];
@@ -58,3 +44,7 @@ exports.removeAccents = word => {
   }
   return result.join("");
 };
+
+initRulesMap();
+
+exports.remove = remove;
