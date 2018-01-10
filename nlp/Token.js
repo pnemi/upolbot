@@ -1,11 +1,12 @@
-const TokenType = {
+const Token = {
   DATE:         "DATE",
   TIME:         "TIME",
+  SUBJECT:      "SUBJECT",
   NUMBER:       "NUMBER",
   WORD:         "WORD",
   PUNCTIATION:  "PUNCTIATION",
   ACRONYM:      "ACRONYM",
-  UNKNOWN:      "UNKNOWN",
+  UNKNOWN:      "UNKNOWN"
 };
 
-module.exports = TokenType;
+module.exports = Token;

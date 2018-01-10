@@ -3,7 +3,7 @@ const
   accents = require("./accents"),
   // spell = require("./spell"),
   stopwords = require("./stopwords"),
-  TokenType = require("./TokenType");
+  Token = require("./Token");
 
 const
   BEG             = "^",
@@ -14,8 +14,8 @@ const
   PUNCTIATION     = "[.,;:!?\\-–—…„“‚‘»«’()\\[\\]{}〈〉/]",
   ACRONYM         = "(?:[a-záéíóúýčďěňřšťžů]\\.){2,}",
   DATE_DELIM      = "[\.\/]",
-  DATE_DD         = "(0?[1-9]|[12][0-9]|3[01])",
-  DATE_MM         = "(0?[1-9]|1[0-2])",
+  DATE_DD         = "((?:0?[1-9]|[12][0-9]|3[01])\\.)",
+  DATE_MM         = "((?:0?[1-9]|1[0-2])\\.)",
   DATE_YYYY       = "(\\s?[0-9]{4})?",
   DATE_MONTH_ABBR = "((?:led|úno|bře|dub|kvě|čer|srp|zář|říj|lis|pro)[^\\s]*)",
   TIME_DELIM      = "[:.]",
@@ -23,6 +23,7 @@ const
   TIME_MM         = "([0-9]{2})",
   TIME_HOUR       = "([0-9]{1,2})\\s?(?:(?:hodin|hod|h))",
   TIME_MIN        = "([0-9]{2})\\s?(?:(?:minut|min|m))",
+  SUBJECT         = "([A-Z]{3})[\s+|\/]([A-Z]{1,}[0-9]*)",
   MATCH_UNTIL_WS  = "[^\\s]*";
 
 const rules = [
@@ -30,7 +31,20 @@ const rules = [
     REGEXPS: [
       new RegExp(`${BEG}${ACRONYM}`, "i")
     ],
-    TYPE: TokenType.ACRONYM
+    TYPE: Token.ACRONYM
+  },
+  {
+    REGEXPS: [
+      // eg.
+      // 17.4. (2017)
+      // 17. 4. (2017)
+      // 17/4/(2017)
+      new RegExp(`${BEG}${DATE_DD}${DATE_MM}${DATE_YYYY}`),
+      // eg.
+      // 17.dubna (2017)
+      new RegExp(`${BEG}${DATE_DD}${DATE_MONTH_ABBR}${DATE_YYYY}`)
+    ],
+    TYPE: Token.DATE
   },
   {
     REGEXPS: [
@@ -49,52 +63,45 @@ const rules = [
       // 15 hodin 36 minut
       new RegExp(`${BEG}${TIME_HOUR}${TIME_MIN}`, "i")
     ],
-    TYPE: TokenType.TIME
+    TYPE: Token.TIME
   },
   {
     REGEXPS: [
-      // eg.
-      // 17.4. (2017)
-      // 17. 4. (2017)
-      // 17/4/(2017)
-      new RegExp(`${BEG}${DATE_DD}${DATE_DELIM}${WS}?${DATE_MM}${DATE_DELIM}${DATE_YYYY}`),
-      // eg.
-      // 17.dubna (2017)
-      new RegExp(`${BEG}${DATE_DD}${DATE_DELIM}${WS}?${DATE_MONTH_ABBR}${DATE_YYYY}`)
+      new RegExp(`${BEG}${NUMERIC}${WS}?${PC}?`)
     ],
-    TYPE: TokenType.DATE
+    TYPE: Token.NUMBER
   },
   {
     REGEXPS: [
-      new RegExp(`${BEG}${NUMERIC}${PC}?`)
+      new RegExp(`${BEG}${SUBJECT}`)
     ],
-    TYPE: TokenType.NUMBER
+    TYPE: Token.SUBJECT
   },
   {
     REGEXPS: [
       new RegExp(`${BEG}${LETTER}+`, "i")
     ],
-    TYPE: TokenType.WORD
+    TYPE: Token.WORD
   },
   {
     REGEXPS: [
       new RegExp(`${BEG}${PUNCTIATION}`)
     ],
-    TYPE: TokenType.PUNCTIATION
+    TYPE: Token.PUNCTIATION
   },
   {
     REGEXPS: [
       new RegExp(`${MATCH_UNTIL_WS}`)
     ],
-    TYPE: TokenType.UNKNOWN
+    TYPE: Token.UNKNOWN
   }
 ]
 
 
-const matchRule = text => {
+const matchRule = sentence => {
   for (let rule of rules) {
     for (let regexp of rule.REGEXPS) {
-      let matches = regexp.exec(text);
+      let matches = regexp.exec(sentence);
       if (matches) {
         return {
           matches: matches,
@@ -107,28 +114,48 @@ const matchRule = text => {
 };
 
 // no lowercase, removing accent, stopwords filtering happen when modify is false
-const tokenize = (text, reduce = true) => {
+const tokenize = (sentence, reduce = true) => {
   let tokens = [];
 
-  while (text.length > 0) {
-    text = text.trim();
-    let match = matchRule(text);
-    let [token] = match.matches; // whole matched string
-    text = text.substr(token.length, text.length);
+  while (sentence.length > 0) {
+    sentence = sentence.trim();
 
-    // console.log(token , match.type);
+    let token = {}; // init token structure
+    let match = matchRule(sentence);
+    let {type} = match;
+    let [text] = match.matches; // whole matched string
+    sentence = sentence.substr(text.length, sentence.length);
 
-    if (match.type === TokenType.WORD && reduce) {
-      token = token.toLowerCase();
-      tokenNoAcc = accents.remove(token);
+    // console.log(text, type);
+
+    if (type === Token.WORD && reduce) {
+      text = text.toLowerCase();
+      tokenNoAcc = accents.remove(text);
       if (!stopwords.has(tokenNoAcc)) {
-        token = stem(tokenNoAcc);
+        text = stem(tokenNoAcc);
       } else {
         continue; // don't push stop word token
       }
     }
 
-    if (match.type !== TokenType.UNKNOWN) {
+    else if (type === Token.SUBJECT) {
+      token.department = match.matches[1];
+      token.subject = match.matches[2];
+    } else if (type === Token.DATE) {
+      // tokens.push(match.matches[1] + ".");
+      // tokens.push(match.matches[2] + ".");
+      // tokens.push(match.matches[3]);
+      // token.text = text;
+      // token.type = type;
+      // continue;
+      console.log(match.matches.slice(1));
+      tokens.push(...match.matches.slice(1).map(i => ({text: i, type: type})));
+      continue;
+    }
+
+    if (match.type !== Token.UNKNOWN) {
+      token.text = text;
+      token.type = type;
       tokens.push(token);
     }
   }

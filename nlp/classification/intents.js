@@ -1,35 +1,41 @@
 const
-  TokenType = require("./TokenType");
+  Entity = require("../tagging/Entity");
 
 /**
  * handler: Name of action handlers to invoke after intent classification.
  * query_params: params for related action from input text
  */
 const intents = {
-  GREETING: {
+  "Help": {
+    handler: "help"
+  },
+  "Greet": {
     handler: "greeting"
-    query_params: [] // no
   },
-  THANKS: {
+  "Thanks": {
     handler: "thanks"
-    query_params: [] // no
   },
-  WEEK_ODD_EVEN: {
+  "IsWeekOddOrEven": {
     handler: "weekOddOrEven"
-    query_params: [] // no
   },
-  DIPLOMA: {
-    handler: "diploma"
-    query_params: [] // no
+  "GetMyDiplomaThesisInfo": {
+    handler: "myThesis"
   },
-  SCHEDULE: {
+  "GetStudentDiplomaThesisInfo": {
+    handler: "studentThesis",
+    entities: {
+      "name": Entity.PERSON
+    }
+  },
+  "GetSchedule": {
     handler: "schedule",
-    query_params: [
-      "date": {
-        TokenType.DATE
-    ]
+    entities: {
+      "day": Entity.TIME
+    }
   },
-  SUBJECT: {
-    handler: "subject"
+  "GetCourseCompletionInfo": {
+    handler: "course"
   }
 };
+
+module.exports = intents;

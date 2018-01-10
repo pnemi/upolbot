@@ -1,29 +1,19 @@
-
-let responseFormat = {
-  intent: "string", // name of FB or another action handler
-  text: "string", // input sentence (untouched)
-  // tokens: ["string"],
-  params: {
-    "param": "value" // parameters for related action
-  }
-}
-
 const
   classify = require("./classification/classifier"),
-  tag      = require("./tagging/tagger").tag,
-  tokenize = require("./tokenizer");
+  intents = require("./classification/intents"),
+  extract = require("./tagging/extraction");
 
 const understand = sentence => {
   let response = {};
-  // response.intent = classify(sentence);
-
-  console.log(tag(sentence));
+  response._text = sentence;
+  response.intent = classify(sentence);
+  let entities = intents[response.intent];
+  if (entities) {
+    response.entities = extract(sentence, entities);
+  }
 
   return response;
 };
 
-let sentence = "Jaký mám zítra rozvrh?";
-// console.log(understand(sentence));
-
-{classes} = require("./tagging/model");
-console.log(classes);
+let sentence = "Jakou bakalářskou práci píše Michaela Smolková?";
+console.log(understand(sentence));

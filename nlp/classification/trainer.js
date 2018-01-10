@@ -1,10 +1,16 @@
 const
   fs = require("fs"),
   tokenize = require("../tokenizer"),
-  trainingSet = require("./trainingSet");
+  trainingSet = require("./trainingSet"),
+  Token = require("../Token");
+
+// TODO: Using n-grams
+// https://medium.com/@Synced/applying-multinomial-naive-bayes-to-nlp-problems-a-practical-explanation-4f5271768ebf
 
 const calcWordsOccurs = (stats, sentence) => {
-  let tokens = tokenize(sentence);
+  let tokens = tokenize(sentence)
+               .filter(token => token.type !== Token.PUNCTIATION)
+               .map(token => token.text);
   tokens.forEach(word => {
     if (stats.hasOwnProperty(word) ) {
       stats[word] = stats[word] + 1;
