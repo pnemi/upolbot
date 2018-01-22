@@ -9,26 +9,34 @@ const
 
 moment.locale("cs"); // cs locales
 
-let stagError = (err) => {
+const stagError = (err) => {
   console.log(err);
   messenger.send({
     text: "Něco se 💩, zkus to prosím znovu. Nezlob se 😕"},
     sender);
 };
 
-let dbError = (err) => {
+const dbError = (err) => {
   console.log(err);
   messenger.send({
     text: "Něco se 💩 s databází, zkus to prosím znovu. Nezlob se 😕"},
     sender);
 };
 
-exports.greeting = (sender) => {
-  messenger.send({text: `Vítá Tě UPOL Asistent!`}, sender);
+/**
+ * Intents handlers section
+ */
+
+exports.noMatch = sender => {
+  messenger.send({text: `Já nevím, já fakt nevím 😢`}, sender);
 };
 
 exports.help = (sender) => {
+  messenger.send({text: `Potřebuješ pomoc?`}, sender);
+};
 
+exports.greeting = (sender) => {
+  messenger.send({text: `Vítá Tě UPOL Asistent!`}, sender);
 };
 
 exports.thesis = (sender, stag_params) => {
@@ -199,6 +207,10 @@ exports.loggedOut = (sender, success) => {
   }
   messenger.send({text: message}, sender);
 };
+
+exports.loggedIn = sender => {
+  messenger.send({text: "Byl jsi přihlášen ✌️ Budeš-li se chtít odhlásit, zvol volbu STAG Účet v menu."}, sender);
+}
 
 exports.hey = (sender) => {
   messenger.getUserInfo(sender).then(response => {

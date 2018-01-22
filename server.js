@@ -10,7 +10,8 @@ const
   handlers = require("./modules/handlers"),
   stag = require("./modules/stag"),
   db = require("./modules/db"),
-  env = require("./modules/env");
+  env = require("./modules/env"),
+  understand = require("./modules/nlp/understand");
 
 var app = express();
 
@@ -46,7 +47,9 @@ app.post("/authorize", (req, res, next) => {
   Promise.all([promStagUser, promPSID]).then(values => {
     let stagNumber = values[0].userName;
     let psid = values[1].recipient;
-    db.insertStudent(psid, auth.user, auth.password, stagNumber).then(() => {
+    db.insertStudent(psid, auth.user, auth.password, stagNumber)
+    .then(() => {
+      handlers["loggedIn"](psid);
       res.redirect(req.body.redirectURISuccess);
     }).catch(reason => {
       console.log(reason);
@@ -113,21 +116,25 @@ app.post("/webhook", function (req, res) {
       if (messagingEvent.message && messagingEvent.message.text) {
         let message = messagingEvent.message.text;
 
-        //let result = processor.match(message);
-        try {
-          let result = JSON.parse(message);
-          callHandler(result, sender);
-        } catch(e) {
-          console.log(e);
-        }
+        console.log("MESSAGE");
+        console.log("-------");
+
+        let result = understand(message);
+        callHandler(result, sender);
 
       } else if (messagingEvent.account_linking) {
+        console.log("LINKING");
+        console.log("-------");
         receivedAccountLink(messagingEvent);
       } else if (messagingEvent.postback) {
+
+        console.log("POSTBACK");
+        console.log("--------");
 
         let payload = messagingEvent.postback.payload;
         let result = processor.matchPayload(payload);
         callHandler(result, sender);
+
       }
 
       res.sendStatus(200);
@@ -140,6 +147,7 @@ let callHandler = (result, sender) => {
   if (result) {
     let handler = handlers[result.handler];
     if (handler && typeof handler === "function") {
+      console.log(result);
       handler(sender, result.stag_params, result.query_params);
     } else {
       console.log("Handler " + result.handler + " is not defined");
