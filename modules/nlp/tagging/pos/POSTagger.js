@@ -1,6 +1,7 @@
 const
-  Perceptron = require("../Perceptron"),
-  tokenize   = require("../../tokenizer");
+  Perceptron = require("../Perceptron");
+
+const UPPER_CASE    = /^[A-ZÁÉÍÓÚÝČĎĚŇŘŠŤŽŮ]$/;
 
 class POSTagger extends Perceptron {
   constructor(history = 2) {
@@ -62,19 +63,24 @@ class POSTagger extends Perceptron {
     let i = _i + this.START_CTX.length; // skip beggining of ctx
     let features = {};
 
-    add(`bias`); // bias acts as an intercept
-    add(`i suffix ${word.substr(-3)}`);
+    add(`AT ${prev}`);
+    add(`BT ${prevPrev}`);
+    add(`|W ${ctx[i]}`);
+    add(`AW ${ctx[i - 1]}`);
+    add(`BW ${ctx[i - 2]}`);
+    add(`aW ${ctx[i + 1]}`);
+    add(`ATBT ${prev} ${prevPrev}`);
+    add(`|O ${i}`);
+    add(`|U ${+(UPPER_CASE.test(word.charAt(0)))}`);
+
+    // ????
+
+    // add(`B`); // bias acts as an intercept
+    add(`i suffix ${word.substr(-2)}`);
     add(`i prefix ${word.charAt(0)}`);
-    add(`i-1 tag ${prev}`);
-    add(`i-2 tag ${prevPrev}`);
-    // add(`i tag+i-2 tag ${prevPrev} ${prev}`); // ??? i-th tag
-    add(`i word ${ctx[i]}`); // normalized
+    add(`i-1 suffix ${ctx[i - 1].substr(-2)}`);
+    add(`i+1 suffix ${ctx[i + 1].substr(-2)}`);
     add(`i-1 tag+i word ${prev, ctx[i]}`);
-    add(`i-1 word ${ctx[i - 1]}`);
-    add(`i-1 suffix ${ctx[i - 1].substr(-3)}`);
-    add(`i-2 word ${ctx[i - 2]}`);
-    add(`i+1 word ${ctx[i + 1]}`)
-    add(`i+1 suffix ${ctx[i + 1].substr(-3)}`);
     add(`i+2 word ${ctx[i + 2]}`);
 
     return features;
@@ -128,10 +134,8 @@ class POSTagger extends Perceptron {
     this._saveModel(saveTo);
   }
 
-  getPartOfSpeech(sentence) {
+  getPartOfSpeech(tokens) {
     let tagged = [];
-
-    let tokens = tokenize(sentence, false).map(token => token.text);
 
     let ctx = [...this.START_CTX, ...tokens.map(token => this._normalizeWord(token)), ...this.END_CTX];
 

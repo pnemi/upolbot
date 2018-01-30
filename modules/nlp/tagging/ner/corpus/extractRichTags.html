@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <style media="screen">
+      body {font-size: 16px;}
+    </style>
+  </head>
+  <body>
+
+    <button type="button" name="button" id="btn-save">Save</button>
+
+    <div id="text"></div>
+
+    <script src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/14082/FileSaver.js" charset="utf-8"></script>
+
+    <script type="text/javascript">
+
+    document.getElementById("btn-save").addEventListener("click", () => {
+      var text = document.getElementById("text").innerText;
+      var blob = new Blob([text], {type: "text/plain;charset=utf-8"});
+      saveAs(blob, "tags.txt");
+    });
+
+    if (window.XMLHttpRequest) {
+       xhttp = new XMLHttpRequest();
+    } else {    // IE 5/6
+       xhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+
+    xhttp.overrideMimeType('text/xml');
+
+    xhttp.open("GET", "cnec2.rich.xml", false);
+    xhttp.send(null);
+    xml = xhttp.responseXML;
+
+    const processSentXml = (sent, tags = []) => {
+      let nodes = sent.childNodes;
+      let text = "";
+      let newTags;
+      for (var i = 0; i < nodes.length; i++) {
+        let child = nodes[i];
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          newTags = tags.concat(child.getAttribute("type"));
+        } else {
+          newTags = tags;
+        }
+        if ("children" in child) {
+          text += processSentXml(child, newTags);
+        } else {
+          text += child.textContent
+                       .split(/\s+/)
+                       .filter(w => w) // empty strings
+                       .map(word => {
+                         return [word, ...newTags].join("|");
+                       })
+                       .join(" ");
+        }
+        text += "\n";
+      }
+      return text.split(/\s+/).filter(w => w).join("<br/>");
+    };
+
+    const sentences = xml.getElementsByTagName("doc")[0]
+       .getElementsByTagName("sentence");
+
+    let html = "";
+    for (var i = 0; i < sentences.length; i++) {
+      // if (sentences[i].getAttribute("id") === "42") {
+        // sent = sentences[i];
+        html += processSentXml(sentences[i]) + "<br/><br/>";
+      // }
+    }
+
+    document.getElementById("text").innerHTML = html;
+
+    </script>
+
+  </body>
+</html>

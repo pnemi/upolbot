@@ -1,10 +1,11 @@
 const
   Perceptron = require("../Perceptron");
 
-const LOWER_WORD = /[a-záéíóúýčďěňřšťžů]+/;
-const UPPER_WORD = /[A-ZÁÉÍÓÚÝČĎĚŇŘŠŤŽŮ]+/;
-const NUMERIC    = /[0-9]+/;
-const NON_WORD   = /\W+/;
+const LOWER_WORD    = /^[a-záéíóúýčďěňřšťžů]+$/;
+const UPPER_WORD    = /^[A-ZÁÉÍÓÚÝČĎĚŇŘŠŤŽŮ]+$/;
+const CAPITAL_WORD  = /^[A-ZÁÉÍÓÚÝČĎĚŇŘŠŤŽŮ][a-záéíóúýčďěňřšťžů]+$/;
+const NUMERIC       = /^[0-9]+$/;
+const NON_WORD      = /^\W+$/;
 
 class NERTagger extends Perceptron {
   constructor(history = 1) {
@@ -24,6 +25,8 @@ class NERTagger extends Perceptron {
       return "a";
     } else if (UPPER_WORD.test(word)) {
       return "A";
+    } else if (CAPITAL_WORD.test(word)) {
+      return "C";
     } else if (NUMERIC.test(word)) {
       return "9";
     } else if (NON_WORD.test(word)) {
@@ -46,13 +49,13 @@ class NERTagger extends Perceptron {
     let features = {};
 
     // add(`bias`); // bias acts as an intercept
-    add(`pos_prev ${ctx.pos[i - 1]}`);
-    add(`ner_prev ${ctx.iob[i - 1]}`); // 
-    add(`w_curr ${word}`);
-    add(`wshape ${this._getWordShape(word)}`);
-    add(`i_suffix ${word.substr(-2)}`);
-    add(`pos_curr ${ctx.pos[i]}`);
-    add(`pos_next ${ctx.pos[i + 1]}`);
+    add(`AT ${ctx.pos[i - 1]}`);
+    add(`AN ${ctx.iob[i - 1]}`); //
+    add(`|W ${word}`);
+    add(`|WS ${this._getWordShape(word)}`);
+    add(`|SUF ${word.substr(-2)}`);
+    add(`|T ${ctx.pos[i]}`);
+    add(`aT ${ctx.pos[i + 1]}`);
 
     return features;
   }

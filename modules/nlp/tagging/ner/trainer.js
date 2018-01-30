@@ -16,9 +16,10 @@ const parseCorpus = (filename, sep = "|") => {
           })
     .on("close", () => {
       let tagger = new NERTagger(1);
-      tagger.trainModel(tagged, "model.json", 15);
+      tagger.trainModel(tagged, "model.json", 8);
     });
 };
 
-let filename = "corpus/cnec2.corp.txt";
+// let filename = "corpus/cnec2.corp.txt";
+let filename = "corpus/cnec2.rich.corp.txt";
 parseCorpus(filename);

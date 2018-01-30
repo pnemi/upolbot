@@ -1,11 +1,16 @@
 const
+  tokenize   = require("../tokenizer"),
+  // lemmas = require("../lemma/lemmatizer"),
   pos = require("./pos/POSTagger").loadModel(),
   ner = require("./ner/NERTagger").loadModel();
 
 const extract = (sentence, entities) => {
-  let posTags = pos.getPartOfSpeech(sentence);
+  let tokens = tokenize(sentence, false).map(token => token.text);
+  let posTags = pos.getPartOfSpeech(tokens);
   let nerTags = ner.getEntities(posTags);
+
   console.log(nerTags);
+
   let extracted = {};
 
   for (let entity in entities) {

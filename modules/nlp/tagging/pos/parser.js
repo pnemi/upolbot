@@ -5,7 +5,7 @@ const
 
 const parseCorpus = (filename, sep = "|") => {
   let instream = fs.createReadStream(filename);
-  let outstream = fs.createWriteStream("corpus/corpus.corp.txt");
+  let outstream = fs.createWriteStream("corpus/cs-web-2014-10k.corp.txt");
   let tagged = [];
   let i = 0;
   let sentence = [];
@@ -31,5 +31,5 @@ const parseCorpus = (filename, sep = "|") => {
     });
 };
 
-let filename = "corpus/corpus.conll";
+let filename = "corpus/cs-web-2014-10k.conll";
 parseCorpus(filename);
