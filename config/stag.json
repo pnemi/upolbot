@@ -10,6 +10,11 @@
     "url": "help/getStagUserForActualUser",
     "params": []
   },
+  "najdiStudentyPodleJmena": {
+    "auth_req": false,
+    "url": "student/najdiStudentyPodleJmena",
+    "params": ["jmeno", "prijmeni"]
+  },
   "getStudentInfo": {
     "auth_req": false,
     "url": "student/getStudentInfo",

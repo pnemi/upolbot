@@ -11,7 +11,8 @@ const
   stag = require("./modules/stag"),
   db = require("./modules/db"),
   env = require("./modules/env"),
-  understand = require("./modules/nlp/understand");
+  understand = require("./modules/nlp/understand"),
+  pending = require("./modules/pending");
 
 var app = express();
 
@@ -87,6 +88,10 @@ app.get("/authorize", function(req, res) {
 
 });
 
+app.get("/help", (req, res) => {
+  res.render("help");
+});
+
 let receivedAccountLink = event => {
 
   let sender = event.sender.id;
@@ -119,8 +124,12 @@ app.post("/webhook", function (req, res) {
         console.log("MESSAGE");
         console.log("-------");
 
-        let result = understand(message);
-        callHandler(result, sender);
+        if (pending.isPending(sender)) {
+          pending.resolve(message, sender);
+        } else {
+          let result = understand(message);
+          callHandler(result, sender);
+        }
 
       } else if (messagingEvent.account_linking) {
         console.log("LINKING");
@@ -148,7 +157,7 @@ let callHandler = (result, sender) => {
     let handler = handlers[result.handler];
     if (handler && typeof handler === "function") {
       console.log(result);
-      handler(sender, result.stag_params, result.query_params);
+      handler(sender, result.entities);
     } else {
       console.log("Handler " + result.handler + " is not defined");
     }

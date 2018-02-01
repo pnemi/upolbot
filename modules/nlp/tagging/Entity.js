@@ -1,5 +1,6 @@
 const Entity = {
-  PERSON: "P",
+  FIRST_NAME: "pf",
+  LAST_NAME: "ps",
   TIME:   "T"
 };
 

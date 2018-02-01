@@ -22,13 +22,11 @@ const intents = {
   "IsWeekOddOrEven": {
     handler: "weekOddOrEven"
   },
-  "GetMyDiplomaThesisInfo": {
-    handler: "myThesis"
-  },
   "GetStudentDiplomaThesisInfo": {
-    handler: "studentThesis",
+    handler: "thesis",
     entities: {
-      "name": Entity.PERSON
+      "first_name": Entity.FIRST_NAME,
+      "last_name": Entity.LAST_NAME
     }
   },
   "GetSchedule": {
@@ -39,6 +37,9 @@ const intents = {
   },
   "GetCourseCompletionInfo": {
     handler: "course"
+  },
+  "Swearing": {
+    handler: "swearing"
   }
 };
 

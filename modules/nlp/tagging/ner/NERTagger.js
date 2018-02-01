@@ -131,7 +131,7 @@ class NERTagger extends Perceptron {
 
       ctx.iob[i + 1] = guess; // update context
 
-      tagged.push([word, pos, guess]);
+      tagged.push([word, pos, guess.split(",")]);
     });
 
     return tagged;

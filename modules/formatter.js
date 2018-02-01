@@ -3,9 +3,34 @@
 const
 env = require("./env");
 
+const AUTH_URL = env.SERVER_URL + "/authorize";
+const HELP_URL = env.SERVER_URL + "/help";
+
 let capitalizeFirstLetter = string => {
   return string[0].toUpperCase() + string.slice(1);
 }
+
+exports.formatHelp = message => {
+  return {
+    "attachment":{
+      "type":"template",
+      "payload":{
+        "template_type": "button",
+        "text": message,
+        "buttons":[
+        {
+          "type":"web_url",
+          "url": HELP_URL,
+          "title": "Prohlédnout",
+          "webview_height_ratio": "full",
+          "messenger_extensions": true,
+          "fallback_url": HELP_URL
+        }
+        ]
+      }
+    }
+  };
+};
 
 exports.formatLogin = message => {
   return {
@@ -17,7 +42,7 @@ exports.formatLogin = message => {
         "buttons":[
           {
             "type":"account_link",
-            "url": env.SERVER_URL + "/authorize"
+            "url": AUTH_URL
           }
         ]
       }
@@ -42,7 +67,7 @@ exports.formatLogout = props => {
   };
 };
 
-exports.formatThesis = props => {
+exports.formatThesis = (props, message) => {
 
   let theses = [];
 

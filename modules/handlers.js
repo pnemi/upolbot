@@ -5,14 +5,60 @@ const
   moment = require("moment"),
   db = require("./db"),
   formatter = require("./formatter"),
-  stag = require("./stag");
+  stag = require("./stag"),
+  pending = require("./pending");
 
 moment.locale("cs"); // cs locales
 
-const stagError = (err) => {
+String.prototype.capitalize = function() {
+    return this.charAt(0).toUpperCase() + this.slice(1).toLowerCase();
+}
+
+const LOGIN_NEEDED_MSG = "K tomu potřebuju, aby ses přihlásil 🙂";
+
+const MULTIPLE_MATCH_QUESTION = [
+  [
+    "Jaký",
+    "Jakou",
+    "Jaké"
+  ],
+  [
+    "studuje",
+    "má"
+  ],
+  [
+    "obor",
+    "ročník",
+    "typ studia",
+    "formu",
+    "osobní číslo"
+  ]
+];
+
+const MULTIPLE_MATCH_DISTINCT = {
+  thesis: [
+    [0, 0, 0], [0, 0, 1], [0, 0, 2], [1, 0, 3], [2, 1, 4]
+  ]
+};
+
+const isObjEmpty = object => {
+  for (let key in object) return false;
+  return true;
+};
+
+const firstDistinctCol = arr => {
+  for (let i = 0; i < arr[0].length; i++) {
+    for (let j = 1; j < arr.length; j++) {
+      if (arr[j][i] !== arr[0][i]) return [arr.map(item => item[i]), i];
+    }
+  }
+  return [];
+};
+
+const stagError = err => {
   console.log(err);
   messenger.send({
-    text: "Něco se 💩, zkus to prosím znovu. Nezlob se 😕"},
+    text: "Něco se 💩 ve studijní agendě, zkus to prosím znovu. Nezlob se 😕"},
     sender);
 };
 
@@ -24,56 +70,154 @@ const dbError = (err) => {
 };
 
 /**
+ * Payload handlers section
+ */
+
+// messenger.getUserInfo(sender)
+// .then(response => {
+//   messenger.send({text: `Hello!\nName: ${response.first_name} ${response.last_name}\nGender: ${response.gender.toUpperCase()}\nID: ${sender}`}, sender);
+// });
+
+exports.welcome = sender => {
+ messenger.send({text: `Čau, já jsem UPolák 🤓`}, sender);
+ exports.help(sender);
+};
+
+/**
  * Intents handlers section
  */
 
 exports.noMatch = sender => {
-  messenger.send({text: `Já nevím, já fakt nevím 😢`}, sender);
+  messenger.send({text: `Já nevím, co tím myslíš 😢`}, sender);
 };
 
-exports.help = (sender) => {
-  messenger.send({text: `Potřebuješ pomoc?`}, sender);
+exports.help = sender => {
+  messenger.send(formatter.formatHelp(`Seznam dostupných příkazů`), sender);
 };
 
-exports.greeting = (sender) => {
-  messenger.send({text: `Vítá Tě UPOL Asistent!`}, sender);
+exports.greeting = sender => {
+  messenger.send({text: `Taky tě zdravím 😜`}, sender);
 };
 
-exports.thesis = (sender, stag_params) => {
+exports.thanks = sender => {
+  messenger.send({text: `Není zač 😇`}, sender);
+};
 
+exports.weekOddOrEven = sender => {
+  let weekNumber = moment().isoWeek();
+  messenger.send({
+    text: `Je ${(weekNumber % 2 === 0 ? "sudý" : "lichý")} (${weekNumber}.) týden 🧐`},
+    sender
+  );
+};
+
+const myThesis = sender => {
   db.selectStudentWithAuthByPSID(sender)
     .then(student => {
 
-      if (student === "NOT_FOUND") {
-        messenger.send(formatter.formatLogin("Požadovaná akce vyžaduje přihlášení"), sender);
+      if (student === db.STUDENT_NOT_FOUND) {
+        let message = formatter.formatLogin(LOGIN_NEEDED_MSG);
+        messenger.send(message, sender);
       } else {
-
-        let params = {
-          "osCislo": stag_params.osCislo || student.stag_number
-        };
-
-        stag.request("getKvalifikacniPrace", params)
-            .then(res => {
-              let theses = res.kvalifikacniPrace;
-              if (theses.length > 0) {
-                messenger.send(formatter.formatThesis(theses), sender);
-              } else {
-                messenger.send({text: "Nemáš tu žádnou práci. Pohoda, ne? 😏"}, sender);
-              }
-
-            })
-            .catch(err => {
-              stagError(err);
-            });
-
+        let stagParams = { "osCislo": student.stag_number };
+        reqThesis(sender, stagParams)
       }
 
     })
-    .catch(err => {
-      dbError(err);
-    });
+    .catch(dbError);
+};
+
+const joinMultipleSubject = arr => {
+  return [
+    ...arr.slice(0, arr.length - 2),
+    arr.slice(-2).join(" nebo ")
+  ].join(", ")
+};
+
+const multipleMatch = (sender, opts, i, intent) => {
+  let question = MULTIPLE_MATCH_DISTINCT[intent][i]
+    .map((val, i) => MULTIPLE_MATCH_QUESTION[i][val])
+    .join(" ")
+  messenger.send({
+    text: `${question}? ${joinMultipleSubject(opts).capitalize()}? 🤔`
+  }, sender);
+};
+
+const studentThesis = (sender, params) => {
+
+  let stagParams = {
+    "jmeno": encodeURI(params.first_name),
+    "prijmeni": encodeURI(params.last_name)
+  };
+
+  stag
+    .request("najdiStudentyPodleJmena", stagParams)
+    .then(res => {
+      let students = res.student;
+      if (students.length > 1) {
+        Promise.all(
+          students.map(s => {
+            // get only first study program for identification purposes
+            return stag.request("getOborInfo", {"oborIdno": s.oborIdnos.split(",")[0]})
+          })
+        )
+        .then(programs => {
+          let matches = programs.map((prog, i) => {
+            return [prog.nazev, students[i].rocnik, prog.typ, prog.forma];
+          });
+          let stagNumbers = students.map(s => s.osCislo);
+          let [options, optionIndex] = firstDistinctCol(matches);
+          if (!options) {
+            options = stagNumbers;
+            optionIndex = 4;
+          }
+          pending.enqueue(options, stagNumbers, "osCislo", "reqThesis", sender);
+          multipleMatch(sender, options, optionIndex, "thesis");
+        })
+        .catch(stagError);
+      } else if (students.length === 1) {
+        reqThesis(sender, { "osCislo": students[0].osCislo });
+      } else {
+        messenger.send({text: "Nikoho takové jsem nenašel ☹️"}, sender);
+      }
+    })
+    .catch(stagError);
+};
+
+const reqThesis = (sender, stagParams) => {
+  stag
+    .request("getKvalifikacniPrace", stagParams)
+    .then(res => {
+      let theses = res.kvalifikacniPrace;
+      if (theses.length > 0) {
+        messenger.send(formatter.formatThesis(theses, "Hodně štěstí s psaním ✊"), sender);
+      } else {
+        messenger.send({text: "Nemáš tu žádnou práci. Pohoda, ne? 😏"}, sender);
+      }
+
+    })
+    .catch(stagError);
+};
+
+exports.reqThesis = reqThesis;
+
+exports.thesis = (sender, params) => {
+
+  let os
+  if (isObjEmpty(params)) {
+    myThesis(sender);
+  } else {
+    studentThesis(sender, params);
+  }
 
 };
+
+
+
+
+
+
+
 
 const days = {
   "1": "Pondělí",
@@ -184,7 +328,7 @@ exports.subject = (sender, stag_params) => {
 
 };
 
-exports.stagAuth = (sender) => {
+exports.stagAuth = sender => {
 
   db.existsStudentByPSID(sender).then(exists => {
     if (exists) {
@@ -210,17 +354,8 @@ exports.loggedOut = (sender, success) => {
 
 exports.loggedIn = sender => {
   messenger.send({text: "Byl jsi přihlášen ✌️ Budeš-li se chtít odhlásit, zvol volbu STAG Účet v menu."}, sender);
+};
+
+exports.swearing = sender => {
+  messenger.send({text: "Prosím, nešlo by to bez těch vulgarit? 🤬"}, sender)
 }
-
-exports.hey = (sender) => {
-  messenger.getUserInfo(sender).then(response => {
-    messenger.send({text: `Hello!\nName: ${response.first_name} ${response.last_name}\nGender: ${response.gender.toUpperCase()}\nID: ${sender}`}, sender);
-  });
-};
-
-exports.weekOddOrEven = (sender) => {
-  let weekNumber = moment().isoWeek();
-  messenger.send(
-    {text: `Je ${(weekNumber % 2 === 0 ? "sudý" : "lichý")} týden`},
-    sender);
-};

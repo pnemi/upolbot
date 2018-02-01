@@ -1,1 +1,71 @@
 <!-- Help manual (with commands and examples) -->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Co umím?</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style media="screen">
+      body {
+        font-family: Palatino;
+        letter-spacing: .02em;
+      }
+
+      main {
+        text-align: center;
+      }
+
+      h1 {
+        font-size: 150%;
+      }
+
+      .command {
+        display: inline-block;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 5px 8px;
+        margin-right: 15px;
+        margin-bottom: 15px;
+        color: #333;
+      }
+
+      .command::after,
+      .command::before {
+        font-family: Arial;
+        font-weight: bold;
+      }
+
+      .command::before {
+        content: "“";
+        margin-right: 3px;
+      }
+
+      .command::after {
+        content: "”";
+        margin-left: 3px;
+      }
+
+    </style>
+
+  </head>
+  <body>
+
+    <main>
+
+      <h1>Nápověda</h1>
+
+      <div class="command">Pomoc</div><!--
+      --><div class="command">Jaké jsou dostupné příkazy?</div>
+
+      <h1>Rozvrh hodin</h1>
+
+      <!-- <div class="command">Jaký rozvrh dnes mám?</div> -->
+
+
+
+    </main>
+
+  </body>
+</html>

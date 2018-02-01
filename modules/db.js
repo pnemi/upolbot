@@ -25,6 +25,8 @@ client.connect(error => {
   }
 });
 
+exports.STUDENT_NOT_FOUND = "1";
+
 exports.insertStudent = (fb_psid, stag_username, stag_password, stag_number) => {
   return new Promise((resolve, reject) => {
     client.query({
@@ -67,7 +69,7 @@ exports.selectStudentWithAuthByPSID = (fb_psid) => {
         console.log("Error selectStudentWithAuthByPSID query: ", error);
         reject(error);
       } else if (result.rowCount === 0) {
-        resolve("NOT_FOUND");
+        resolve(exports.STUDENT_NOT_FOUND);
       } else {
         result.rows[0].stag_password = crypt.decrypt(result.rows[0].stag_password);
         resolve(result.rows[0]);
@@ -86,7 +88,7 @@ exports.selectStudentByPSID = (fb_psid) => {
         console.log("Error selectStudentByPSID query: ", error);
         reject(error);
       } else if (result.rowCount === 0) {
-        resolve("NOT_FOUND");
+        resolve(exports.STUDENT_NOT_FOUND);
       } else {
         resolve(result.rows[0]);
       }
