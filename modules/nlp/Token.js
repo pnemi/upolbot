@@ -4,6 +4,7 @@ const Token = {
   SUBJECT:      "SUBJECT",
   NUMBER:       "NUMBER",
   WORD:         "WORD",
+  STOPWORD:     "STOPWORD",
   PUNCTIATION:  "PUNCTIATION",
   ACRONYM:      "ACRONYM",
   UNKNOWN:      "UNKNOWN"

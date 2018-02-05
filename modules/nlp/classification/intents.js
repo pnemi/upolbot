@@ -29,18 +29,68 @@ const intents = {
       "last_name": Entity.LAST_NAME
     }
   },
+  // "GetTodaySchedule": {
+  //   handler: "todaySchedule"
+  // },
+  // "GetTomorrowSchedule": {
+  //   handler: "tomorrowSchedule"
+  // },
   "GetSchedule": {
     handler: "schedule",
     entities: {
-      "day": Entity.TIME
+      "first_name": Entity.FIRST_NAME,
+      "last_name": Entity.LAST_NAME,
+      "day": Entity.DAY,
+      "month": Entity.MONTH,
+      "year": Entity.YEAR
     }
   },
-  "GetCourseCompletionInfo": {
-    handler: "course"
+  "RemainingObligations": {
+    handler: "credits"
+  },
+  "GetNumberOfExams": {
+    handler: "numberOfExams"
+  },
+  "GetNumberOfExamsWinterSemester": {
+    handler: "numberOfExams",
+    params: {
+      "semester": "ZS"
+    }
+  },
+  "GetNumberOfExamsSummerSemester": {
+    handler: "numberOfExams",
+    params: {
+      "semester": "LS"
+    }
+  },
+  "IdentifyStudent": {
+    handler: "identifyStudent",
+    entities: {
+      "first_name": Entity.FIRST_NAME,
+      "last_name": Entity.LAST_NAME
+    }
+  },
+  "GetExamsDates": {
+    handler: "examsDates",
+    params: {
+      "zapsan": false
+    }
+  },
+  "GetRegisteredExamsDates": {
+    handler: "examsDates",
+    params: {
+      "zapsan": true
+    }
   },
   "Swearing": {
     handler: "swearing"
-  }
+  },
+
+
+  "GetCourseCompletionInfo": {
+    handler: "course"
+  },
+
 };
 
 module.exports = intents;

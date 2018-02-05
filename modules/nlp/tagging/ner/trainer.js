@@ -4,22 +4,27 @@ const
   stream = require("stream"),
   NERTagger = require("./NERTagger");
 
-const parseCorpus = (filename, sep = "|") => {
-  let instream = fs.createReadStream(filename);
+const parseCorpus = (corpusFilename, modelFilename) => {
+  let instream = fs.createReadStream(corpusFilename);
   let outstream = new stream;
-  let tagged = [];
-  let i = 0;
+  let sentences = [];
+  let sentence = [];
   rl.createInterface(instream, outstream)
     .on("line", line => {
-        tagged.push(line.split(/\s+/)
-              .map(token => token.split(sep)));
-          })
+      let l = line.split(/\s+/);
+      if (l.length < 3) {
+        sentences.push(sentence);
+        sentence = [];
+      } else {
+        sentence.push([l[0], l.slice(3).join(",") || "_", l[2].slice(0, 2)]);
+      }
+    })
     .on("close", () => {
       let tagger = new NERTagger(1);
-      tagger.trainModel(tagged, "model.json", 8);
+      tagger.trainModel(sentences, modelFilename, 8);
     });
 };
 
-// let filename = "corpus/cnec2.corp.txt";
-let filename = "corpus/cnec2.rich.corp.txt";
-parseCorpus(filename);
+let corpusFilename = "corpus/cnec2.rich.conll";
+let modelFilename = "model.json";
+parseCorpus(corpusFilename, modelFilename);

@@ -118,17 +118,29 @@ app.post("/webhook", function (req, res) {
 
       let sender = messagingEvent.sender.id;
 
-      if (messagingEvent.message && messagingEvent.message.text) {
+      if (messagingEvent.message &&
+          messagingEvent.message.text &&
+          !messagingEvent.message.is_echo) {
         let message = messagingEvent.message.text;
 
         console.log("MESSAGE");
         console.log("-------");
 
+        console.log(messagingEvent);
+
+
         if (pending.isPending(sender)) {
-          pending.resolve(message, sender);
+          // is quick reply message containing payload, no need to NLP eval
+          if (messagingEvent.message.quick_reply) {
+            let payload = messagingEvent.message.quick_reply.payload;
+            pending.resolvePayload(payload, sender);
+          } else {
+            pending.resolveMessage(message, sender);
+          }
         } else {
           let result = understand(message);
           callHandler(result, sender);
+
         }
 
       } else if (messagingEvent.account_linking) {
@@ -141,8 +153,12 @@ app.post("/webhook", function (req, res) {
         console.log("--------");
 
         let payload = messagingEvent.postback.payload;
-        let result = processor.matchPayload(payload);
-        callHandler(result, sender);
+        if (pending.isPending(sender)) {
+          pending.resolvePayload(payload, sender);
+        } else {
+          let result = processor.matchPayload(payload);
+          callHandler(result, sender);
+        }
 
       }
 
@@ -157,7 +173,7 @@ let callHandler = (result, sender) => {
     let handler = handlers[result.handler];
     if (handler && typeof handler === "function") {
       console.log(result);
-      handler(sender, result.entities);
+      handler(sender, result.entities, result.params || {});
     } else {
       console.log("Handler " + result.handler + " is not defined");
     }

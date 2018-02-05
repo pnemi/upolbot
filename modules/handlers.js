@@ -14,6 +14,8 @@ String.prototype.capitalize = function() {
     return this.charAt(0).toUpperCase() + this.slice(1).toLowerCase();
 }
 
+const GET_AUTH = true;
+
 const LOGIN_NEEDED_MSG = "K tomu potřebuju, aby ses přihlásil 🙂";
 
 const MULTIPLE_MATCH_QUESTION = [
@@ -55,18 +57,39 @@ const firstDistinctCol = arr => {
   return [];
 };
 
-const stagError = err => {
+const stagError = (sender, err) => {
   console.log(err);
   messenger.send({
     text: "Něco se 💩 ve studijní agendě, zkus to prosím znovu. Nezlob se 😕"},
     sender);
 };
 
-const dbError = (err) => {
+const dbError = (sender, err) => {
   console.log(err);
   messenger.send({
     text: "Něco se 💩 s databází, zkus to prosím znovu. Nezlob se 😕"},
     sender);
+};
+
+const getStagInfo = (sender, cb, auth = false) => {
+  let handler = auth ? "selectStudentWithAuthByPSID" : "selectStudentByPSID";
+  db[handler](sender)
+    .then(response => {
+
+      if (response === db.STUDENT_NOT_FOUND) {
+        messenger.send(formatter.formatLogin(LOGIN_NEEDED_MSG), sender);
+      } else {
+        cb(response);
+      }
+
+    })
+    .catch(err => dbError(sender, err));
+};
+
+const stagRequest = (url, params, cb, auth) => {
+  stag.request(url, params, auth)
+      .then(cb)
+      .catch(err => stagError(sender, err));
 };
 
 /**
@@ -86,6 +109,24 @@ exports.welcome = sender => {
 /**
  * Intents handlers section
  */
+
+exports.identifyStudent = (sender, entities) => {
+  let stagParams = {
+    "jmeno": encodeURI(entities.first_name || ""),
+    "prijmeni": encodeURI(entities.last_name || "")
+  };
+  stagRequest("najdiStudentyPodleJmena", stagParams, res => {
+    let students = res.student;
+    if (students.length > 1) {
+      console.log(students);
+
+      // jména
+      // students.map(s => s.jmeno).filter((elem, pos,arr) => arr.indexOf(elem) == pos);
+      // příjmení
+      // .map(s => s.jmeno).filter((elem, pos,arr) => arr.indexOf(elem) == pos);
+    }
+  });
+};
 
 exports.noMatch = sender => {
   messenger.send({text: `Já nevím, co tím myslíš 😢`}, sender);
@@ -112,19 +153,10 @@ exports.weekOddOrEven = sender => {
 };
 
 const myThesis = sender => {
-  db.selectStudentWithAuthByPSID(sender)
-    .then(student => {
-
-      if (student === db.STUDENT_NOT_FOUND) {
-        let message = formatter.formatLogin(LOGIN_NEEDED_MSG);
-        messenger.send(message, sender);
-      } else {
-        let stagParams = { "osCislo": student.stag_number };
-        reqThesis(sender, stagParams)
-      }
-
-    })
-    .catch(dbError);
+  getStagInfo(sender, info => {
+    let stagParams = { "osCislo": info.stag_number };
+    reqThesis(sender, stagParams)
+  });
 };
 
 const joinMultipleSubject = arr => {
@@ -145,43 +177,49 @@ const multipleMatch = (sender, opts, i, intent) => {
 
 const studentThesis = (sender, params) => {
 
-  let stagParams = {
-    "jmeno": encodeURI(params.first_name),
-    "prijmeni": encodeURI(params.last_name)
-  };
+  if (!params.first_name || !params.last_name) {
+    messenger.send({text: "Budu potřebovat celé jméno 😇"}, sender);
+  } else {
+    let stagParams = {
+      "jmeno": encodeURI(params.first_name),
+      "prijmeni": encodeURI(params.last_name)
+    };
 
-  stag
-    .request("najdiStudentyPodleJmena", stagParams)
-    .then(res => {
-      let students = res.student;
-      if (students.length > 1) {
-        Promise.all(
-          students.map(s => {
-            // get only first study program for identification purposes
-            return stag.request("getOborInfo", {"oborIdno": s.oborIdnos.split(",")[0]})
+    stag
+      .request("najdiStudentyPodleJmena", stagParams)
+      .then(res => {
+        let students = res.student;
+        if (students.length > 1) {
+          Promise.all(
+            students.map(s => {
+              // get only first study program for identification purposes
+              return stag.request("getOborInfo", {"oborIdno": s.oborIdnos.split(",")[0]})
+            })
+          )
+          .then(programs => {
+            let matches = programs.map((prog, i) => {
+              return [prog.nazev, students[i].rocnik, prog.typ, prog.forma];
+            });
+
+            let stagNumbers = students.map(s => s.osCislo);
+            let [options, optionIndex] = firstDistinctCol(matches);
+            if (!options) {
+              options = stagNumbers;
+              optionIndex = 4;
+            }
+            messenger.send(formatter.formatStudents(matches), sender);
+            pending.enqueuePostback(stagNumbers, "osCislo", "reqThesis", sender);
+            // multipleMatch(sender, options, optionIndex, "thesis");
           })
-        )
-        .then(programs => {
-          let matches = programs.map((prog, i) => {
-            return [prog.nazev, students[i].rocnik, prog.typ, prog.forma];
-          });
-          let stagNumbers = students.map(s => s.osCislo);
-          let [options, optionIndex] = firstDistinctCol(matches);
-          if (!options) {
-            options = stagNumbers;
-            optionIndex = 4;
-          }
-          pending.enqueue(options, stagNumbers, "osCislo", "reqThesis", sender);
-          multipleMatch(sender, options, optionIndex, "thesis");
-        })
-        .catch(stagError);
-      } else if (students.length === 1) {
-        reqThesis(sender, { "osCislo": students[0].osCislo });
-      } else {
-        messenger.send({text: "Nikoho takové jsem nenašel ☹️"}, sender);
-      }
-    })
-    .catch(stagError);
+          .catch(stagError);
+        } else if (students.length === 1) {
+          reqThesis(sender, { "osCislo": students[0].osCislo });
+        } else {
+          messenger.send({text: "Nikoho takové jsem nenašel ☹️"}, sender);
+        }
+      })
+      .catch(stagError);
+  }
 };
 
 const reqThesis = (sender, stagParams) => {
@@ -212,8 +250,188 @@ exports.thesis = (sender, params) => {
 
 };
 
+exports.schedule = (sender, params) => {
+  let date;
+  if (params.day && params.month) {
+    date = `${params.day}.${params.month}.${params.year || moment().year()}`;
+  } else {
+    date = moment().format("DD.MM.YYYY");
+  }
 
+  let stagParams = {
+    "datumOd": date,
+    "datumDo": date
+  };
 
+  getStagInfo(sender, info => {
+
+    stagParams["osCislo"] = info.stag_number;
+
+    stag.request("getRozvrhByStudent", stagParams)
+        .then(res => {
+          let events = res.rozvrhovaAkce;
+          if (events.length === 0) {
+            messenger.send({text: "V tento den nemáš školu 😅"}, sender);
+          } else {
+            messenger.send(formatter.formatSchedule(events), sender);
+          }
+        })
+        .catch(stagError);
+  });
+
+};
+
+exports.credits = sender => {
+  getStagInfo(sender, info => {
+    let stagNumberParam = {"osCislo": info.stag_number};
+    let auth = {"user": info.stag_username, "password": info.stag_password };
+    stagRequest("getStudentInfo", stagNumberParam, s => {
+      stagRequest("getStudijniProgramInfo", {"stprIdno": s.stprIdno}, prog => {
+        let numOfCredits = prog.kredity;
+        stagRequest("getStudentPredmetyAbsolvoval", {}, marks => {
+          let acquiredCredits = marks.predmetAbsolvoval
+            .filter(sub => sub.absolvoval === "A")
+            .reduce((sum, sub) => { return sum += sub.pocetKreditu }, 0);
+          let remainingCredits = numOfCredits - acquiredCredits;
+          messenger.send({
+            text: `Ještě zbývá získat ${remainingCredits} kreditů ze ${numOfCredits} potřebných 👏`},
+            sender);
+        }, auth);
+      });
+    });
+  }, GET_AUTH);
+};
+
+const SUMMER_SEMESTER = {
+  START: moment("1.2.", "D.M."),
+  END  : moment("31.8.", "D.M.")
+};
+
+const getCurrentSemester = () => {
+  if (moment().isBetween(SUMMER_SEMESTER.START, SUMMER_SEMESTER.END)) {
+    return "LS";
+  } else {
+    return "ZS";
+  }
+};
+
+const ROK = "2017";
+
+const getAcademicalYear = () => {
+  return `${ROK}/${parseInt(ROK.slice(2)) + 1}`;
+};
+
+const SEMESTERS = {
+  LS: "letním",
+  ZS: "zimním"
+};
+
+const numberOfExams = exports.numberOfExams = (sender, entities, params) => {
+  let currentSemester = getCurrentSemester();
+  let semester = params.semester || currentSemester;
+  getStagInfo(sender, info => {
+    let stagNumberParam = {"osCislo": info.stag_number};
+    let auth = {"user": info.stag_username, "password": info.stag_password };
+    let subjectsParam = {"osCislo": info.stag_number, "semestr": semester};
+
+    // TODO: Na SEMESTR a ROK bude API !
+
+    stagRequest("getZnamkyByStudent", stagNumberParam, subjects => {
+      let numOfExams = subjects.student_na_predmetu
+        .filter(s => {
+          return s.rok === ROK &&
+                 s.semestr === semester &&
+                 s.zk_typ_hodnoceni === "Známkou" &&
+                 !s.zk_hodnoceni;
+        })
+        .length;
+      let message;
+      let beggining;
+      if (!params.semester || params.semester === currentSemester) {
+        beggining = `V tomto ${SEMESTERS[semester]}`;
+      } else {
+        if (semester > currentSemester) {
+          beggining = `V minulém ${SEMESTERS[semester]}`;
+        } else if (semester < currentSemester) {
+          beggining = `V dalším ${SEMESTERS[semester]}`;
+        }
+      }
+      if (numOfExams) {
+        message = `${beggining} semestru ${getAcademicalYear()} zbývá udělat ${numOfExams} zkoušek 🤓`
+      } else {
+        message = `${beggining} semestru ${getAcademicalYear()} máš všechny zkoušky hotové 😎`;
+      }
+      messenger.send({text: message}, sender);
+    }, auth);
+  }, GET_AUTH);
+};
+
+const ENROLL_MSG = {
+  "true": "odepsání",
+  "false": "zapsání"
+};
+
+exports.examsDates = (sender, entities, params) => {
+  let enrolled = ("zapsan" in params && params.zapsan) || false;
+  getStagInfo(sender, info => {
+    let stagNumberParam = {"osCislo": info.stag_number};
+    let auth = {"user": info.stag_username, "password": info.stag_password };
+    stagRequest("getTerminyProStudenta", stagNumberParam, res => {
+      let datesGroupedBySubject = res.termin
+        .filter(d => {
+          return d.zapsan === enrolled && d.lzeZapsatOdepsat;
+        })
+        .reduce(function (r, a) {
+          let key = a.katedra + "/" + a.predmet;
+          r[key] = r[key] || [];
+          r[key].push(a);
+          return r;
+        }, {});
+      let subjects = Object.keys(datesGroupedBySubject);
+      if (subjects.length > 0) {
+        let handler = enrolled ? "examDateWithdraw" : "examDates";
+        pending.enqueuePostback(datesGroupedBySubject, "dates", handler, sender);
+        messenger.send(formatter.formatExamsDates(datesGroupedBySubject, enrolled), sender);
+      } else {
+        let action = ENROLL_MSG[enrolled];
+        messenger.send({text: `Žádný termín k ${action} jsem nenašel 😊`}, sender);
+      }
+    }, auth);
+  }, GET_AUTH);
+};
+
+exports.examDates = (sender, params) => {
+  pending.enqueuePostback(params.dates, "date", "examDateRegister", sender);
+  messenger.send(formatter.formatExamDates(params.dates), sender);
+};
+
+const examTermChange = (sender, term, url, msgOK, msgERR) => {
+  getStagInfo(sender, info => {
+    let stagParams = {
+      "osCislo": info.stag_number,
+      "termIdno": term.termIdno
+    };
+    let auth = {"user": info.stag_username, "password": info.stag_password };
+    stagRequest(url, stagParams, res => {
+      let message = (res === "OK" ? msgOK : msgERR);
+      messenger.send({text: message}, sender);
+    }, auth);
+  }, GET_AUTH);
+};
+
+exports.examDateRegister = (sender, params) => {
+  let msgOK = "Zapsal jsem tě! Hodně štěstí 😉";
+  let msgERR = "Nepovedlo se mi tě zapsat, sorry 😭";
+  examTermChange(sender, params.date, "zapisStudentaNaTermin", msgOK, msgERR);
+};
+
+exports.examDateWithdraw = (sender, params) => {
+  let msgOK = "Odhlásil jsem tě z termínu 😉";
+  let msgERR = "Nepovedlo se mi tě odhlásit z termínu, sorry 😭";
+  // must be first one since student can register only one term
+  let date = params.dates[0];
+  examTermChange(sender, date, "odhlasStudentaZTerminu", msgOK, msgERR);
+};
 
 
 
@@ -229,7 +447,7 @@ const days = {
   "7": "Neděle",
 };
 
-exports.schedule = (sender, stag_params, query_params) => {
+exports.old_schedule = (sender, stag_params, query_params) => {
 
   let params = {
     "osCislo": "R16988"
@@ -265,7 +483,7 @@ exports.schedule = (sender, stag_params, query_params) => {
     .then(student => {
 
       if (student === "NOT_FOUND") {
-        messenger.send(formatter.formatLogin("Požadovaná akce vyžaduje přihlášení"), sender);
+        messenger.send(formatter.formatLogin(LOGIN_NEEDED_MSG), sender);
       } else {
 
       stag.request("getRozvrhByStudent", params)
@@ -358,4 +576,4 @@ exports.loggedIn = sender => {
 
 exports.swearing = sender => {
   messenger.send({text: "Prosím, nešlo by to bez těch vulgarit? 🤬"}, sender)
-}
+};

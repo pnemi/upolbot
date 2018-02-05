@@ -3,14 +3,11 @@ const
   tokenize = require("../tokenizer"),
   trainingSet = require("./trainingSet"),
   Token = require("../Token"),
-  ngrams = require("./ngrams");
+  ngrams = require("./ngrams"),
+  getTokensWithNGrams = require("./classifier").getTokensWithNGrams;
 
 const calcWordsOccurs = (stats, sentence) => {
-  let tokens = tokenize(sentence)
-               .filter(token => token.type !== Token.PUNCTIATION)
-               .map(token => token.text);
-  tokens
-  .concat(ngrams(tokens, 2))
+  getTokensWithNGrams(sentence)
   .forEach(word => {
     if (stats.hasOwnProperty(word) ) {
       stats[word] = stats[word] + 1;

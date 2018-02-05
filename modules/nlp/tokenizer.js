@@ -14,8 +14,8 @@ const
   PUNCTIATION     = "[.,;:!?\\-–—…„“‚‘»«’()\\[\\]{}〈〉/]",
   ACRONYM         = "(?:[a-záéíóúýčďěňřšťžů]\\.){2,}",
   DATE_DELIM      = "[\.\/]",
-  DATE_DD         = "((?:0?[1-9]|[12][0-9]|3[01])\\.)",
-  DATE_MM         = "((?:0?[1-9]|1[0-2])\\.)",
+  DATE_DD         = "(0?[1-9]|[12][0-9]|3[01])(\\.)",
+  DATE_MM         = "(0?[1-9]|1[0-2])(\\.)",
   DATE_YYYY       = "(\\s?[0-9]{4})?",
   DATE_MONTH_ABBR = "((?:led|úno|bře|dub|kvě|čer|srp|zář|říj|lis|pro)[^\\s]*)",
   TIME_DELIM      = "[:.]",
@@ -97,7 +97,6 @@ const rules = [
   }
 ]
 
-
 const matchRule = sentence => {
   for (let rule of rules) {
     for (let regexp of rule.REGEXPS) {
@@ -128,36 +127,33 @@ const tokenize = (sentence, reduce = true) => {
 
     // console.log(text, type);
 
-    if (type === Token.WORD && reduce) {
-      text = text.toLowerCase();
-      tokenNoAcc = accents.remove(text);
-      if (!stopwords.has(tokenNoAcc)) {
-        text = stem(tokenNoAcc);
-      } else {
-        continue; // don't push stop word token
-      }
-    }
+    if (type === Token.WORD || type === Token.PROTECTED) {
+      if (reduce) {
+        text = text.toLowerCase();
+        text = accents.remove(text);
 
-    else if (type === Token.SUBJECT) {
-      token.department = match.matches[1];
-      token.subject = match.matches[2];
+        if (type !== Token.PROTECTED && stopwords.has(text)) {
+          text = null;
+          type = Token.STOPWORD; // reclassify to stopword token
+        } else {
+          text = stem(text);
+        }
+      }
+    } else if (type === Token.SUBJECT) {
+      // TODO: ...
+      // token.department = match.matches[1];
+      // token.subject = match.matches[2];
     } else if (type === Token.DATE) {
-      // tokens.push(match.matches[1] + ".");
-      // tokens.push(match.matches[2] + ".");
-      // tokens.push(match.matches[3]);
-      // token.text = text;
-      // token.type = type;
-      // continue;
-      console.log(match.matches.slice(1));
-      tokens.push(...match.matches.slice(1).map(i => ({text: i, type: type})));
+      tokens.push(...match.matches
+        .slice(1)
+        .filter(m => m)
+        .map(i => ({text: i, type: type})));
       continue;
     }
 
-    if (match.type !== Token.UNKNOWN) {
-      token.text = text;
-      token.type = type;
-      tokens.push(token);
-    }
+    token.text = text;
+    token.type = type;
+    tokens.push(token);
   }
 
   return tokens;

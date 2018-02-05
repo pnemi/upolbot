@@ -45,18 +45,94 @@ const trainingSet = [
   {
     class: "GetStudentDiplomaThesisInfo",
     sentences: [
-      "Zjisti informace o diplomové, bakalářské nebo kvalifikační práci",
-      "Na jaké téma píše diplomovou, bakalářskou nebo kvalifikační práci?",
-      "Jaká je diplomka, bakalářka nebo kvalifikační práce?",
-      "Informace o diplomové, bakalářské nebo kvalifikační práci"
+      "Zjisti informace o diplomové, bakalářské, kvalifikační, závěrečné práci",
+      "Na jaké téma píše diplomovou, bakalářskou, kvalifikační, závěrečné práci?",
+      "Jaká je diplomka, bakalářka, kvalifikační, závěrečná práce?",
+      "Informace o diplomové, bakalářské, kvalifikační, závěrečné práci",
+      "Ukaž mi diplomovou, bakalářskou, kvalifikační, závěrečnou práci"
     ]
   },
+  // {
+  //   class: "GetTodaySchedule",
+  //   sentences: [
+  //     "Jaký mám dnes rozvrh?",
+  //     "Jaký mám dnes rozvrh hodin?",
+  //     "Ukaž mi rozvrh na dnešní den"
+  //   ]
+  // },
+  // {
+  //   class: "GetTommorowSchedule",
+  //   sentences: [
+  //     "Jaký mám zítra rozvrh?",
+  //     "Jaký mám zítra rozvrh hodin?",
+  //     "Ukaž mi rozvrh na zítřejší den"
+  //   ]
+  // },
   {
     class: "GetSchedule",
     sentences: [
-      "Jaký mám dnes rozvrh?",
-      "Jaký mám zítra rozvrh hodin?",
-      "Ukaž mi rozvrh na zítřejší den"
+      "Jaký mám rozvrh?",
+      "Jaký mám rozvrh hodin?",
+      "Ukaž mi rozvrh na den"
+    ]
+  },
+  {
+    class: "RemainingObligations",
+    sentences: [
+      "Jaké mám zbývající studijní povinnosti?",
+      "Kolik kreditů musím ještě získat v tomto studiu?",
+      "Kolik kreditů zbývá získat v mém studiu?"
+    ]
+  },
+  {
+    class: "GetNumberOfExams",
+    sentences: [
+      "Počet zkoušek v aktuálním semestru",
+      "Kolik mám tento semestr zkoušek?",
+      "Kolik zbývá udělat zkoušek v tomto semestru"
+    ]
+  },
+  {
+    class: "GetNumberOfExamsWinterSemester",
+    sentences: [
+      "Počet zkoušek v zimním semestru",
+      "Kolik mám v zimním semestru zkoušek?",
+      "Kolik zbývá udělat zkoušek v zimním semestru"
+    ]
+  },
+  {
+    class: "GetNumberOfExamsSummerSemester",
+    sentences: [
+      "Počet zkoušek v letním semestru",
+      "Kolik mám v letním semestru zkoušek?",
+      "Kolik zbývá udělat zkoušek v letním semestru"
+    ]
+  },
+  {
+    class: "IdentifyStudent",
+    sentences: [
+      "Najdi studenta se jménem"
+    ]
+  },
+  {
+    class: "GetExamsDates",
+    sentences: [
+      "Ukaž mi seznam zkoušek",
+      "Jsou nějaké nové termíny zkoušek?",
+      "Ukaž mi termíny zkoušek",
+      "Jaké jsou moje termíny zkoušek?",
+      "Chci se zapsat na zkoušku"
+    ]
+  },
+  {
+    class: "GetRegisteredExamsDates",
+    sentences: [
+      "Ukaž mi seznam zkoušek, na kterých jsem zapsán",
+      "Ukaž mi termíny zkoušek, na kterých jsem zapsán",
+      "Zkoušky, které mám zapsané",
+      "Zkoušky, co jsem si zapsal",
+      "Zapsané zkoušky",
+      "Odepsat se z termínu"
     ]
   },
   {
@@ -73,6 +149,13 @@ const trainingSet = [
     class: "Swearing",
     sentences: [
       "akcizák", "ambažúra", "babák", "bastard", "bembeřice", "bimbásek", "blbka", "blejt", "bordel", "bordel jak v tanku", "bordelmamá", "brko", "buchta", "buk", "buzerace", "buzerant", "buzerantský", "buzerovat", "buzík", "buzna", "být putna", "chcanec", "chcaní", "chcanky", "chcát", "chcípnout", "chlívák", "chuj", "chujovina", "čokoláda", "čuba", "čubička", "čubka", "čurák", "čúrák", "čůrák", "cyp", "debil", "debilka", "debilní", "dělat si kozy", "dement", "dementka", "díra", "do hajzlu", "do piče", "do piči", "do píči", "do prdele", "dobytek", "drbat", "drek", "dršťka", "drž hubu", "držka", "dutý", "dylina", "flus", "grázl", "hajzl", "hajzlbába", "hajzldědek", "hajzlpapír", "haur", "himlsakra", "hňup", "homokláda", "honit", "hořet koudel u prdele", "hovado", "hovno", "hovnocuc", "huba", "hulibrk", "idiot", "imbecil", "jako kdybys to vytáhl krávě z prdele", "jebačka", "jebat", "kláda", "kokot", "kokotina", "kozomrd", "kretén", "kripl", "ksindl", "kulatina", "kunda", "kunďák", "kuřbuřt", "kurevník", "kurevsky", "kurva", "kurvě", "kurvit", "kurvit se", "kurvítko", "magor", "mindža", "mlít hovna", "mrd", "mrdačka", "mrdat", "mrdka", "mrdlota", "mrdna", "mrdník", "mrdnout", "na hovno", "na pyču", "nasraný", "nasrat", "negr", "obšoustník", "ocas", "ochlasta", "očurávat", "ojebat", "ožrala", "pasák", "pazneht", "péro", "piča", "píča", "píchat", "pičovina", "píčovina", "pičus", "píčus", "pitoma", "pizda", "pochcat", "poser", "posera", "posraný", "posrat", "posrat se", "posrat se v kině", "prcat", "prd", "prdelatý", "prdelka", "prdíček", "prdík", "přefiknout", "prkno", "průser", "pták", "řiťopich", "ser", "šoustat", "spermohlt", "šprcguma", "šprcka", "sráč", "sračka", "sraní", "srát", "srát se", "stát za hovno", "šuk", "šukání", "šulín", "v piči", "viks", "vychcaný", "vyjebat", "vysrat", "zajebaný", "zasraný", "zasrat", "zjebat", "zkurvený", "zkurvit", "zkurvysyn", "zmrd", "zmrdat", "zprcat"
+    ]
+  },
+  {
+    class: "UPSearch",
+    sentences: [
+      "hledej",
+      "najdi"
     ]
   }
 ];

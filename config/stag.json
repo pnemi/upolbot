@@ -10,6 +10,16 @@
     "url": "help/getStagUserForActualUser",
     "params": []
   },
+  "getPredmetyByStudent": {
+    "auth_req": false,
+    "url": "predmety/getPredmetyByStudent",
+    "params": ["osCislo", "semestr"]
+  },
+  "getStudentPredmetyAbsolvoval": {
+    "auth_req": true,
+    "url": "student/getStudentPredmetyAbsolvoval",
+    "params": []
+  },
   "najdiStudentyPodleJmena": {
     "auth_req": false,
     "url": "student/najdiStudentyPodleJmena",
@@ -75,6 +85,11 @@
     "url": "programy/getOborInfo",
     "params": ["oborIdno"]
   },
+  "getStudijniProgramInfo": {
+    "auth_req": false,
+    "url": "programy/getStudijniProgramInfo",
+    "params": ["stprIdno"]
+  },
   "getPlanyOboru": {
     "auth_req": false,
     "url": "programy/getPlanyOboru",
@@ -94,5 +109,20 @@
     "auth_req": true,
     "url": "znamky/getZnamkyByStudent",
     "params": ["osCislo"]
+  },
+  "getTerminyProStudenta": {
+    "auth_req": true,
+    "url": "terminy/getTerminyProStudenta",
+    "params": ["osCislo"]
+  },
+  "zapisStudentaNaTermin": {
+    "auth_req": true,
+    "url": "terminy/zapisStudentaNaTermin",
+    "params": ["osCislo", "termIdno"]
+  },
+  "odhlasStudentaZTerminu": {
+    "auth_req": true,
+    "url": "terminy/odhlasStudentaZTerminu",
+    "params": ["osCislo", "termIdno"]
   }
 }

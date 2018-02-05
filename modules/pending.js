@@ -5,7 +5,7 @@ const
 
 const pending = {};
 
-exports.enqueue = (options, params, stagParam, handler, sender) => {
+exports.enqueueMessage = (options, params, stagParam, handler, sender) => {
   if (!(sender in pending)) {
     pending[sender] = [];
   }
@@ -17,12 +17,22 @@ exports.enqueue = (options, params, stagParam, handler, sender) => {
   });
 };
 
-exports.isPending = sender => {
-  if (sender in pending && pending[sender].length >= 1) return true;
-  return false;
+exports.enqueuePostback = (params, stagParam, handler, sender) => {
+  if (!(sender in pending)) {
+    pending[sender] = [];
+  }
+  pending[sender].push({
+    "params": params,
+    "stagParam": stagParam,
+    "handler": handler
+  });
 };
 
-exports.resolve = (message, sender) => {
+exports.isPending = sender => {
+  return sender in pending && pending[sender].length >= 1;
+};
+
+exports.resolveMessage = (message, sender) => {
   let data = pending[sender].pop();
   let tokens = tokenize(message, false);
   let coeffs = data.options
@@ -36,4 +46,11 @@ exports.resolve = (message, sender) => {
   }, 0);
   let stagParams = {[data.stagParam]: data.params[chosen]};
   handlers[data.handler](sender, stagParams);
+};
+
+exports.resolvePayload = (payload, sender) => {
+  let data = pending[sender].pop();
+  let params = {[data.stagParam]: data.params[payload]};
+  console.log(params);
+  handlers[data.handler](sender, params);
 };

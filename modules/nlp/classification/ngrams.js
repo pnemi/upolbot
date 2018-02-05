@@ -1,11 +1,16 @@
+const
+  Token = require("../Token");
+
 const ngrams = (tokens, n) => {
+  let nGrams = [];
   if (tokens.length <= 1) {
-    return tokens;
+    return nGrams;
   }
-  let numOfNGrams = tokens.length - (n - 1);
-  let nGrams = Array(numOfNGrams);
   for (let i = n, j = 0; i <= tokens.length; i++, j++) {
-    nGrams[j] = tokens.slice(i - n, i).join(" ");
+    let candidates = tokens.slice(i - n, i);
+    if (candidates.every(c => c.type !== Token.STOPWORD)) {
+      nGrams.push(candidates.map(c => c.text).join(" "));
+    }
   }
   return nGrams;
 };

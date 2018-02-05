@@ -15,21 +15,24 @@ const calcClassScore = (tokens, className, classWords, corpusWords) => {
     if (token in classWords[className]) {
       let commonality = corpusWords[token]; // # of occurs in entire corpus
       // console.log("Match: " + token + " (" + commonality + "x)");
-      score += (1 / commonality); // higher commonality means lower score
+      let weight = token.split(" ").length;
+      score += (weight / commonality); // higher commonality means lower score
     }
     return score;
   }, 0);
 };
 
-const classify = sentence => {
+const getTokensWithNGrams = sentence => {
+  let tokens = tokenize(sentence).filter(t => t.type !== Token.PUNCTIATION);
+  let nGrams = ngrams(tokens, 2);
+  return tokens.filter(t =>  t.type !== Token.STOPWORD)
+                 .map(t => t.text)
+                 .concat(nGrams);
+};
 
-  // TODO: Assign new words to corpus class when successful matching
+const classify = (sentence, silent = true) => {
 
-  let tokens = tokenize(sentence)
-              .filter(token => token.type !== Token.PUNCTIATION)
-              .map(token => token.text);
-
-  tokens.concat(ngrams(tokens, 2));
+  let tokens = getTokensWithNGrams(sentence);
 
   let scores = {};
   let sum = 0;
@@ -47,18 +50,19 @@ const classify = sentence => {
     return chosen;
   }, {maxScore: 0, class: null});
 
-  // TODO: Threshold of score below which there is no match (unable to set via Multinomial Naive Bayes)
-
-  Object.entries(scores)
-        .forEach(item => {
-          console.log(item[0] + ": " + item[1] / sum * 100);
-        });
-
+  if (!silent) {
+    Object
+      .entries(scores)
+      .forEach(item => {
+        console.log(item[0] + ": " + item[1] / sum * 100);
+    });
+  }
 
   return chosen.class || NO_MATCH_CLASS;
 }
 
 module.exports = classify;
+module.exports.getTokensWithNGrams = getTokensWithNGrams;
 
 // TODO: Pouze slova (ne data ani nic jiného)
 // Input data is transformed consistently with our training data

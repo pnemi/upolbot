@@ -128,7 +128,7 @@ exports.formatSchedule = props => {
   props.forEach(event => {
     events.push({
       "title": event.hodinaSkutOd.value + " až " + event.hodinaSkutDo.value +
-               " je " + event.katedra + "/" + event.predmet,
+               " je " + event.predmet,
       "subtitle": event.typAkce +
                   " v " + event.budova + " " + event. mistnost +
                   " s " + event.ucitel.prijmeni
@@ -146,6 +146,102 @@ exports.formatSchedule = props => {
   };
 
 };
+
+const STUDY_TYPE = {
+  "Doktorský": "doktorského",
+  "Magisterský": "magisterského",
+  "Bakalářský": "bakalářského",
+  "Navazující": "navazujícího"
+}
+
+exports.formatStudents = props => {
+
+  let students = props.map((s, i) => {
+    return {
+      "title": s[0],
+      "subtitle": `${s[1]}. ročník ${STUDY_TYPE[s[2]]} studia`,
+      "buttons":[
+        {
+          "type":"postback",
+          "title":"Zvolit",
+          "payload": i
+        }
+      ]
+    };
+  });
+
+  return {
+    "attachment":{
+      "type":"template",
+      "payload":{
+        "template_type":"generic",
+        "elements": students
+      }
+    }
+  };
+};
+
+exports.formatExamsDates = (props, enrolled) => {
+
+  let title = (
+    enrolled ?
+    "Odhlásit se" :
+    "Zapsat na termín"
+  );
+
+  let dates = [];
+
+  for (let term in props) {
+    let t = props[term];
+    let item = {
+      "title": term,
+      "buttons":[
+        {
+          "type": "postback",
+          "title": title,
+          "payload": term
+        }
+      ]
+    };
+    if (enrolled) {
+      let time = t[0].casOd.split(":").slice(0, 2).join(":");
+      let date = t[0].datum.value;
+      item.subtitle = `Zapsán na ${date} v ${time}`;
+    }
+    dates.push(item);
+  }
+
+  return {
+    "attachment":{
+      "type":"template",
+      "payload":{
+        "template_type":"generic",
+        "elements": dates
+      }
+    }
+  };
+};
+
+exports.formatExamDates = props => {
+
+  let dates = props.map((d, i) => {
+    let time = d.casOd.split(":").slice(0, 2).join(":");
+    let date = d.datum.value.split(".").slice(0, 2).join(".") + ".";
+    return {
+      "content_type": "text",
+      "title": `${date} v ${time}`,
+      "payload": i
+    };
+  });
+
+  return {
+    "text": "Vyber si termín",
+    "quick_replies": dates
+  }
+};
+
+
+
 
 exports.formatSubject = props => {
 

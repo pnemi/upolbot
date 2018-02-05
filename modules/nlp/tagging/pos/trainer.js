@@ -4,21 +4,28 @@ const
   stream = require("stream"),
   POSTagger = require("./POSTagger");
 
-const parseCorpus = (filename, sep = "|") => {
-  let instream = fs.createReadStream(filename);
+const parseCorpus = (corpusFilename, modelFilename) => {
+  let instream = fs.createReadStream(corpusFilename);
   let outstream = new stream;
-  let tagged = [];
-  let i = 0;
+  let sentences = [];
+  let sentence = [];
   rl.createInterface(instream, outstream)
     .on("line", line => {
-        tagged.push(line.split(/\s+/)
-              .map(token => token.split(sep)));
-          })
+      let l = line.split(/\s+/);
+      if (l.length === 3) {
+        sentence.push([l[0], l[2].slice(0, 2)]) // without lemma (second col)
+      } else {
+        // end of sentence
+        sentences.push(sentence);
+        sentence = [];
+      }
+    })
     .on("close", () => {
       let tagger = new POSTagger(2);
-      tagger.trainModel(tagged, "model.json", 8);
+      tagger.trainModel(sentences, modelFilename, 8);
     });
 };
 
-let filename = "corpus/cs-web-2014-10k.corp.txt";
-parseCorpus(filename);
+let corpusFilename = "corpus/cs-web-2014-10k.conll";
+let modelFilename = "model.json";
+parseCorpus(corpusFilename, modelFilename);
