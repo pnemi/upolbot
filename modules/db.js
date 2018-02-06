@@ -2,7 +2,7 @@ const
   pg = require("pg"),
   env = require("./env"),
   crypt = require("./crypt"),
-  client = new pg.Client(env.DB_URL);
+  client = new pg.Client(env.DATABSE_URL);
 
 const queries = {
   insertStudent: "INSERT INTO students (fb_psid, stag_username, stag_password, stag_number) " +
