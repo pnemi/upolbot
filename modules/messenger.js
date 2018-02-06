@@ -7,7 +7,7 @@ env = require("./env");
 exports.send = (message, recipient) => {
   request({
     url: "https://graph.facebook.com/v2.6/me/messages",
-    qs: {access_token: env.PAGE_ACCESS_TOKEN},
+    qs: {access_token: env.MESSENGER_PAGE_ACCESS_TOKEN},
     method: "POST",
     json: {
       recipient: {id: recipient},
@@ -28,7 +28,7 @@ exports.sendPromise = (message, recipient) => {
 
   request({
     url: "https://graph.facebook.com/v2.6/me/messages",
-    qs: {access_token: env.PAGE_ACCESS_TOKEN},
+    qs: {access_token: env.MESSENGER_PAGE_ACCESS_TOKEN},
     method: "POST",
     json: {
       recipient: {id: recipient},
@@ -55,7 +55,7 @@ exports.getPSID = (accountLinkingToken) => {
     request({
       url: "https://graph.facebook.com/v2.6/me",
       qs: {
-        access_token: env.PAGE_ACCESS_TOKEN,
+        access_token: env.MESSENGER_PAGE_ACCESS_TOKEN,
         fields: "recipient",
         account_linking_token: accountLinkingToken
       },
@@ -82,7 +82,7 @@ exports.getUserInfo = (userId) => {
       url: `https://graph.facebook.com/v2.6/${userId}`,
       qs: {
         fields: "first_name,last_name,gender",
-        access_token: env.PAGE_ACCESS_TOKEN
+        access_token: env.MESSENGER_PAGE_ACCESS_TOKEN
       },
       method: "GET",
     }, (error, response) => {

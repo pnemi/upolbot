@@ -127,9 +127,6 @@ app.post("/webhook", function (req, res) {
         console.log("MESSAGE");
         console.log("-------");
 
-        console.log(messagingEvent);
-
-
         if (pending.isPending(sender)) {
           // is quick reply message containing payload, no need to NLP eval
           if (messagingEvent.message.quick_reply) {
