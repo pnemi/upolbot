@@ -6,6 +6,8 @@ if (process.env.NODE_ENV === "production") {
   env = process.env;
 } else {
   env = require("../config/env.json");
+  process.env.NER_MODEL_URL = env.NER_MODEL_URL;
+  process.env.POS_MODEL_URL = env.POS_MODEL_URL;
 }
 
 // App Secret can be retrieved from the App Dashboard
@@ -21,7 +23,7 @@ exports.PAGE_ACCESS_TOKEN = env.MESSENGER_PAGE_ACCESS_TOKEN;
 // assets located at this address.
 exports.SERVER_URL = env.SERVER_URL;
 
-exports.DB_URL = env.DB_URL;
+exports.DATABASE_URL = env.DATABASE_URL;
 
 exports.CIPHER_KEY = env.CIPHER_KEY;
 
@@ -29,7 +31,7 @@ if (!(this.APP_SECRET &&
       this.VALIDATION_TOKEN &&
       this.PAGE_ACCESS_TOKEN &&
       this.SERVER_URL &&
-      this.DB_URL &&
+      this.DATABASE_URL &&
       this.CIPHER_KEY)) {
   console.error("Missing config values");
   process.exit(1);

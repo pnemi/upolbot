@@ -1,6 +1,8 @@
 const
-  fs = require("fs");
+  fs = require("fs"),
+  request = require("request");
 
+const IS_URL        = /^http/;
 
 /**
  * (Multiclass) Averaged Perceptron:
@@ -13,7 +15,7 @@ const
  */
 
 class Perceptron {
-  constructor(history) {
+  constructor(history, weights, classes) {
     if (new.target === Perceptron) {
       throw new TypeError("Cannot construct Perceptron instances directly");
     }
@@ -23,7 +25,7 @@ class Perceptron {
       Each item represents number of occurences (frequencies) for
       chosen POS tag and history (context).
     */
-    this.weights = {};
+    this.weights = weights || {};
 
     /**
      * Cumulative weight coeffs (for averaged weights calc).
@@ -34,7 +36,7 @@ class Perceptron {
     /**
      * POS tag in case of POS tagger and IOB tag in case of NER tagger.
      */
-    this.classes = new Set();
+    this.classes = classes || new Set();
     this.instances = 0;
 
     /**
@@ -90,12 +92,29 @@ class Perceptron {
   /**
    * Loading serialized tagger model.
    */
-  static loadModel(filename = "./model") {
-
-    let data = require(filename);
-    this.weights = data.weights;
-    this.classes = data.classes;
-  };
+   static modelLoader(filename) {
+     return new Promise((resolve, reject) => {
+       fs.readFile(filename, (data, err) => {
+         if (IS_URL.test(filename)) {
+           request(filename, (err, response, body) => {
+             if (err) reject(err);
+             if (response.statusCode == 200) {
+               let parsed = JSON.parse(body);
+               resolve(parsed);
+             }
+           });
+         } else {
+           fs.readFile(__dirname + filename, "utf8", (err, data) => {
+             if (err) reject(err);
+             else {
+               let parsed = JSON.parse(data);
+               resolve(parsed);
+             }
+           });
+         }
+       });
+     });
+   }
 
   /**
    * Serializing tagger model.

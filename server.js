@@ -12,6 +12,7 @@ const
   db = require("./modules/db"),
   env = require("./modules/env"),
   understand = require("./modules/nlp/understand"),
+  loadModels = require("./modules/nlp/tagging/extraction").loadModels,
   pending = require("./modules/pending");
 
 var app = express();
@@ -180,6 +181,8 @@ let callHandler = (result, sender) => {
   }
 };
 
-app.listen(app.get("port"), function () {
-    console.log("Express server listening on port " + app.get("port"));
+loadModels(() => {
+  app.listen(app.get("port"), () => {
+      console.log("Express server listening on port " + app.get("port"));
+  });
 });

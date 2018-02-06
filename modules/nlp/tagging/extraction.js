@@ -1,8 +1,25 @@
 const
   tokenize   = require("../tokenizer"),
   // lemmas = require("../lemma/lemmatizer"),
-  pos = require("./pos/POSTagger").loadModel(),
-  ner = require("./ner/NERTagger").loadModel();
+  POSTagger = require("./pos/POSTagger"),
+  NERTagger = require("./ner/NERTagger");
+
+let pos, ner;
+
+const loadModels = whenLoaded => {
+  console.log("Loading models");
+  Promise
+    .all([POSTagger.modelLoader(), NERTagger.modelLoader()])
+    .then(models => {
+      pos = new POSTagger(2, models[0].weights, models[0].classes);
+      ner = new NERTagger(1, models[1].weights, models[1].classes);
+      console.log("Models loaded");
+      whenLoaded();
+    })
+    .catch(err => {
+      console.error("Error loading models");
+    })
+};
 
 const NER_TAG_INDEX = 2;
 const WORD_INDEX = 0;
@@ -52,3 +69,4 @@ const extract = (sentence, entities) => {
 };
 
 module.exports = extract;
+module.exports.loadModels = loadModels;

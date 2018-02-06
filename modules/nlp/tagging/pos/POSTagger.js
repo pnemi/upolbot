@@ -2,18 +2,16 @@ const
   Perceptron = require("../Perceptron");
 
 const UPPER_CASE    = /^[A-ZÁÉÍÓÚÝČĎĚŇŘŠŤŽŮ]$/;
+const IS_URL        = /^http/;
 
 class POSTagger extends Perceptron {
-  constructor(history = 2) {
-    super(history);
+  constructor(history = 2, weights, classes) {
+    super(history, weights, classes);
   }
 
-  static loadModel(filename = "./model") {
-    let tagger = new POSTagger();
-    let data = require(filename);
-    tagger.weights = data.weights;
-    tagger.classes = data.classes;
-    return tagger;
+  static modelLoader() {
+    let filename = process.env.POS_MODEL_URL;
+    return super.modelLoader(filename);
   }
 
   _initUnambig(wordTags) {

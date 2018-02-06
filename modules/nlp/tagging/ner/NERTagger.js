@@ -8,16 +8,13 @@ const NUMERIC       = /^[0-9]+$/;
 const NON_WORD      = /^\W+$/;
 
 class NERTagger extends Perceptron {
-  constructor(history = 1) {
-    super(history);
+  constructor(history = 1, weights, classes) {
+    super(history, weights, classes);
   }
 
-  static loadModel(filename = "./model") {
-    let tagger = new NERTagger();
-    let data = require(filename);
-    tagger.weights = data.weights;
-    tagger.classes = data.classes;
-    return tagger;
+  static modelLoader() {
+    let filename = process.env.NER_MODEL_URL;
+    return super.modelLoader(filename);
   }
 
   _getWordShape(word) {
