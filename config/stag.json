@@ -23,7 +23,8 @@
   "najdiStudentyPodleJmena": {
     "auth_req": false,
     "url": "student/najdiStudentyPodleJmena",
-    "params": ["jmeno", "prijmeni"]
+    "params": ["jmeno", "prijmeni"],
+    "wildcard_params": ["jmeno", "prijmeni"]
   },
   "getStudentInfo": {
     "auth_req": false,
@@ -58,7 +59,8 @@
   "najdiPredmety": {
     "auth_req": false,
     "url": "predmety/najdiPredmety",
-    "params": ["nazev"]
+    "params": ["nazev"],
+    "wildcard_params": ["nazev"]
   },
   "getPredmetInfo": {
     "auth_req": false,

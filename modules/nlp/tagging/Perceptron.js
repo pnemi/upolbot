@@ -233,19 +233,23 @@ class Perceptron {
   }
 
   _shuffleSents(sents) {
-    return sents.sort(Math.random() - 0.5);
-  }
+    var currentIndex = sents.length, temporaryValue, randomIndex;
 
-  // _getContext(tuples) {
-  //   return {
-  //     words: [...this.START_CTX,
-  //             ...sent.map(pair => normalizeWord(pair[0])),
-  //             ...this.END_CTX],
-  //     pos:   [...this.START_CTX,
-  //             ...sent.map(pair => normalizeWord(pair[0])),
-  //             ...this.END_CTX]
-  //   };
-  // }
+    // While there remain elements to shuffle...
+    while (0 !== currentIndex) {
+
+      // Pick a remaining element...
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex -= 1;
+
+      // And swap it with the current element.
+      temporaryValue = sents[currentIndex];
+      sents[currentIndex] = sents[randomIndex];
+      sents[randomIndex] = temporaryValue;
+    }
+
+    return sents;
+  }
 
   // TODO: Filter features with low weights (lower than 3).
   // http://ufal.mff.cuni.cz/czech-tagging/VotrubecMSC2005.pdf (4.1.3)

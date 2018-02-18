@@ -22,7 +22,7 @@ const parseCorpus = (corpusFilename, modelFilename) => {
     })
     .on("close", () => {
       let tagger = new POSTagger(2);
-      tagger.trainModel(sentences, modelFilename, 8);
+      tagger.trainModel(sentences, modelFilename, 15);
     });
 };
 

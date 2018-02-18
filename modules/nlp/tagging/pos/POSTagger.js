@@ -38,12 +38,10 @@ class POSTagger extends Perceptron {
   }
 
   _normalizeWord(word) {
-    if (word.includes("-") && word[0] !== "-") {
-      return "!HYPHEN";
-    } else if (this._isNumeric(word) && word.length === 4) {
+    if (this._isNumeric(word) && word.length === 4) {
       return "!YEAR";
-    } else if (this._isNumeric(word[0])) {
-      return "!DIGITS";
+    } else if (this._isNumeric(word)) {
+      return "!NUM";
     } else {
       return word.toLowerCase();
     }
@@ -61,6 +59,7 @@ class POSTagger extends Perceptron {
     let i = _i + this.START_CTX.length; // skip beggining of ctx
     let features = {};
 
+    add(`B`); // bias acts as an intercept
     add(`AT ${prev}`);
     add(`BT ${prevPrev}`);
     add(`|W ${ctx[i]}`);
@@ -68,18 +67,17 @@ class POSTagger extends Perceptron {
     add(`BW ${ctx[i - 2]}`);
     add(`aW ${ctx[i + 1]}`);
     add(`ATBT ${prev} ${prevPrev}`);
-    add(`|O ${i}`);
+    add(`|O ${+(i > 0)}`);
     add(`|U ${+(UPPER_CASE.test(word.charAt(0)))}`);
 
     // ????
 
-    // add(`B`); // bias acts as an intercept
-    add(`i suffix ${word.substr(-2)}`);
-    add(`i prefix ${word.charAt(0)}`);
-    add(`i-1 suffix ${ctx[i - 1].substr(-2)}`);
-    add(`i+1 suffix ${ctx[i + 1].substr(-2)}`);
-    add(`i-1 tag+i word ${prev, ctx[i]}`);
-    add(`i+2 word ${ctx[i + 2]}`);
+    add(`|S ${word.substr(-3)}`); // byl na -2
+    add(`|P ${word.charAt(0)}`);
+    add(`AWS ${ctx[i - 1].substr(-2)}`);
+    add(`awS ${ctx[i + 1].substr(-2)}`);
+    add(`AT|W ${prev, ctx[i]}`);
+    add(`bW ${ctx[i + 2]}`);
 
     return features;
   }

@@ -17,15 +17,22 @@ exports.enqueueMessage = (options, params, stagParam, handler, sender) => {
   });
 };
 
-exports.enqueuePostback = (params, stagParam, handler, sender) => {
+// exports.enqueuePostback = (params, stagParam, handler, sender) => {
+//   if (!(sender in pending)) {
+//     pending[sender] = [];
+//   }
+//   pending[sender].push({
+//     "params": params,
+//     "stagParam": stagParam,
+//     "handler": handler
+//   });
+// };
+
+exports.enqueuePostback = (sender, req) => {
   if (!(sender in pending)) {
     pending[sender] = [];
   }
-  pending[sender].push({
-    "params": params,
-    "stagParam": stagParam,
-    "handler": handler
-  });
+  pending[sender].push(req);
 };
 
 exports.isPending = sender => {
@@ -48,9 +55,15 @@ exports.resolveMessage = (message, sender) => {
   handlers[data.handler](sender, stagParams);
 };
 
+// exports.resolvePayload = (payload, sender) => {
+//   let data = pending[sender].pop();
+//   let params = {[data.stagParam]: data.params[payload]};
+//   console.log(params);
+//   handlers[data.handler](sender, params);
+// };
+
 exports.resolvePayload = (payload, sender) => {
-  let data = pending[sender].pop();
-  let params = {[data.stagParam]: data.params[payload]};
-  console.log(params);
-  handlers[data.handler](sender, params);
+  let request = pending[sender].pop();
+  request.params[request.requirement] = request.options[payload];
+  handlers[request.handler](sender, request.params, request.responseCallback);
 };

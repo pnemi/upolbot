@@ -11,12 +11,11 @@ const queries = {
   existsStudentByPSID: "SELECT EXISTS(SELECT 1 FROM students WHERE fb_psid=$1)",
   selectStudentWithAuthByPSID: "SELECT * FROM students " +
                                "WHERE fb_psid=$1 LIMIT 1",
-  selectStudentByPSID: "SELECT (fb_psid, stag_username, stag_number) " +
+  selectStudentByPSID: "SELECT fb_psid, stag_username, stag_number " +
                        "FROM students " +
                        "WHERE fb_psid=$1 LIMIT 1",
   deleteStudentByPSID: "DELETE FROM students WHERE fb_psid=$1"
 }
-
 
 client.connect(error => {
   if (error) {
@@ -26,6 +25,7 @@ client.connect(error => {
 });
 
 exports.STUDENT_NOT_FOUND = "1";
+exports.GET_AUTH = true;
 
 exports.insertStudent = (fb_psid, stag_username, stag_password, stag_number) => {
   return new Promise((resolve, reject) => {
@@ -43,7 +43,7 @@ exports.insertStudent = (fb_psid, stag_username, stag_password, stag_number) => 
   });
 };
 
-exports.existsStudentByPSID = (fb_psid) => {
+exports.existsStudentByPSID = fb_psid => {
   return new Promise((resolve, reject) => {
     client.query({
       text: queries.existsStudentByPSID,
@@ -59,7 +59,7 @@ exports.existsStudentByPSID = (fb_psid) => {
   });
 };
 
-exports.selectStudentWithAuthByPSID = (fb_psid) => {
+exports.selectStudentWithAuthByPSID = fb_psid => {
   return new Promise((resolve, reject) => {
     client.query({
       text: queries.selectStudentWithAuthByPSID,
@@ -78,7 +78,7 @@ exports.selectStudentWithAuthByPSID = (fb_psid) => {
   });
 };
 
-exports.selectStudentByPSID = (fb_psid) => {
+exports.selectStudentByPSID = fb_psid => {
   return new Promise((resolve, reject) => {
     client.query({
       text: queries.selectStudentByPSID,
@@ -96,7 +96,7 @@ exports.selectStudentByPSID = (fb_psid) => {
   });
 };
 
-exports.deleteStudentByPSID = (fb_psid) => {
+exports.deleteStudentByPSID = fb_psid => {
   return new Promise((resolve, reject) => {
     client.query({
       text: queries.deleteStudentByPSID,

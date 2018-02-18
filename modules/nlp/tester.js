@@ -1,7 +1,10 @@
 const
-  understand = require("./understand");
+  env = require("./../env"),
+  understand = require("./understand"),
+  loadModels = require("./tagging/extraction").loadModels;
 
-let sentence = "Jaký mám rozvrh 18. července?";
-console.log(understand(sentence));
+let sentence = "Řekni mi rozvrh Svobody na tento týden";
 
-// console.log(nGramGenerator(["Jak", "se", "máš", "?"], 2));
+loadModels(() => {
+  console.log(understand(sentence));
+});

@@ -29,14 +29,22 @@ const intents = {
       "last_name": Entity.LAST_NAME
     }
   },
-  // "GetTodaySchedule": {
-  //   handler: "todaySchedule"
-  // },
-  // "GetTomorrowSchedule": {
-  //   handler: "tomorrowSchedule"
-  // },
-  "GetSchedule": {
-    handler: "schedule",
+  "GetTodaySchedule": {
+    handler: "todaySchedule",
+    entities: {
+      "first_name": Entity.FIRST_NAME,
+      "last_name": Entity.LAST_NAME
+    }
+  },
+  "GetTomorrowSchedule": {
+    handler: "tomorrowSchedule",
+    entities: {
+      "first_name": Entity.FIRST_NAME,
+      "last_name": Entity.LAST_NAME
+    }
+  },
+  "GetScheduleOnDate": {
+    handler: "dateSchedule",
     entities: {
       "first_name": Entity.FIRST_NAME,
       "last_name": Entity.LAST_NAME,
@@ -45,8 +53,25 @@ const intents = {
       "year": Entity.YEAR
     }
   },
-  "RemainingObligations": {
-    handler: "credits"
+  "GetSemesterBeginning": {
+    handler: "nextSemesterBeginning",
+    entities: {
+      "first_name": Entity.FIRST_NAME,
+      "last_name": Entity.LAST_NAME
+    }
+  },
+  "GetSemesterEnd": {
+    handler: "nextSemesterEnd",
+    entities: {
+      "first_name": Entity.FIRST_NAME,
+      "last_name": Entity.LAST_NAME
+    }
+  },
+  "RemainingCredits": {
+    handler: "remainingCredits"
+  },
+  "NumberOfCreditsCurrentSemester": {
+    handler: "numberOfCreditsCurrentSemester"
   },
   "GetNumberOfExams": {
     handler: "numberOfExams"
@@ -80,6 +105,26 @@ const intents = {
     handler: "examsDates",
     params: {
       "zapsan": true
+    }
+  },
+  "GetBeginningOfTheFirstLessonOfTheDay": {
+    handler: "firstLessonBeginning",
+    entities: {
+      "first_name": Entity.FIRST_NAME,
+      "last_name": Entity.LAST_NAME,
+      "day": Entity.DAY,
+      "month": Entity.MONTH,
+      "year": Entity.YEAR
+    }
+  },
+  "GetEndOfTheLastLessonOfTheDay": {
+    handler: "lastLessonEnd",
+    entities: {
+      "first_name": Entity.FIRST_NAME,
+      "last_name": Entity.LAST_NAME,
+      "day": Entity.DAY,
+      "month": Entity.MONTH,
+      "year": Entity.YEAR
     }
   },
   "Swearing": {

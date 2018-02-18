@@ -20,12 +20,13 @@ const calcClassScore = (tokens, className, classWords, corpusWords) => {
     }
     return score;
   }, 0);
+
 };
 
 const getTokensWithNGrams = sentence => {
   let tokens = tokenize(sentence).filter(t => t.type !== Token.PUNCTIATION);
   let nGrams = ngrams(tokens, 2);
-  return tokens.filter(t =>  t.type !== Token.STOPWORD)
+  return tokens.filter(t => t.type !== Token.STOPWORD)
                  .map(t => t.text)
                  .concat(nGrams);
 };
@@ -54,7 +55,7 @@ const classify = (sentence, silent = true) => {
     Object
       .entries(scores)
       .forEach(item => {
-        console.log(item[0] + ": " + item[1] / sum * 100);
+        console.log(item[0] + ": " + (item[1] / sum * 100).toFixed(1) + "%");
     });
   }
 

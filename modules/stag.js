@@ -16,8 +16,8 @@ let getURL = (action, params) => {
 
   for (let param in params) {
     // search wildcards
-    if (uri[action].url === uri.najdiPredmety &&
-        param === "nazev") {
+    if ("wildcard_params" in uri[action] &&
+        uri[action].wildcard_params.includes(param)) {
       url += `&${param}=%25${params[param]}%25`;
     } else {
       url += `&${param}=${params[param]}`;

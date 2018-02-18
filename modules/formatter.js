@@ -5,10 +5,39 @@ env = require("./env");
 
 const AUTH_URL = env.SERVER_URL + "/authorize";
 const HELP_URL = env.SERVER_URL + "/help";
+const UPSEARCH_URL = "http://search.inf.upol.cz/";
+const UPSEARCH_LOGO = UPSEARCH_URL + "static/images/upol-search-logo-chatbot.png"
 
 let capitalizeFirstLetter = string => {
   return string[0].toUpperCase() + string.slice(1);
 }
+
+exports.formatWelcome = message => {
+  return {
+    "attachment":{
+      "type":"template",
+      "payload":{
+        "template_type": "button",
+        "text": message ||
+        "Zde se můžeš přihlásit do studijní agendy (STAG) a prohlédnout si, na co se mě můžeš zeptat. Tyto možnosti jsou také dostupné v levém dolním menu označené symbolem \u2630 😎",
+        "buttons":[
+        {
+          "type":"account_link",
+          "url": AUTH_URL
+        },
+        {
+          "type":"web_url",
+          "url": HELP_URL,
+          "title": "Dostupné příkazy",
+          "webview_height_ratio": "full",
+          "messenger_extensions": true,
+          "fallback_url": HELP_URL
+        }
+        ]
+      }
+    }
+  };
+};
 
 exports.formatHelp = message => {
   return {
@@ -32,13 +61,42 @@ exports.formatHelp = message => {
   };
 };
 
+exports.formatUPSearch = message => {
+  return {
+    "attachment":{
+      "type":"template",
+      "payload":{
+        "template_type": "generic",
+        "elements":[
+          {
+            "title": "UPSearch",
+            "subtitle":"První univerzitní fulltextový vyhledávač",
+            "image_url": UPSEARCH_LOGO,
+            "default_action": {
+              "type": "web_url",
+              "url": UPSEARCH_URL
+            },
+            "buttons":[
+              {
+                "type":"web_url",
+                "url": UPSEARCH_URL,
+                "title": "Otevřít"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  };
+};
+
 exports.formatLogin = message => {
   return {
     "attachment":{
       "type":"template",
       "payload":{
         "template_type": "button",
-        "text": message || "Přihlášení do STAG",
+        "text": message || "Přihlášení do studijní agendy (STAG)",
         "buttons":[
           {
             "type":"account_link",
@@ -50,13 +108,13 @@ exports.formatLogin = message => {
   };
 };
 
-exports.formatLogout = props => {
+exports.formatLogout = stagID => {
   return {
     "attachment":{
       "type":"template",
       "payload":{
         "template_type": "button",
-        "text": "Odhlášení ze STAG",
+        "text": `Jsi přihlášen jako ${stagID} 🙂\nOdhlášení ze studijní agendy (STAG)`,
         "buttons":[
           {
             "type":"account_unlink"
@@ -67,7 +125,7 @@ exports.formatLogout = props => {
   };
 };
 
-exports.formatThesis = (props, message) => {
+exports.formatThesis = (props) => {
 
   let theses = [];
 

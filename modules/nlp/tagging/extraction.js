@@ -18,6 +18,7 @@ const loadModels = whenLoaded => {
     })
     .catch(err => {
       console.error("Error loading models");
+      console.log(err);
     })
 };
 

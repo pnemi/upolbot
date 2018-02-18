@@ -25,9 +25,10 @@ let match = text => {
 };
 
 const PAYLOADS = {
-  GREETING_PAYLOAD: "greeting",
+  GREETING_PAYLOAD: "welcome",
   HELP_PAYLOAD: "help",
-  STAG_AUTH_PAYLOAD: "stagAuth"
+  STAG_AUTH_PAYLOAD: "stagAuth",
+  UPSEARCH_PAYLOAD: "upSearch"
 };
 
 let matchPayload = payload => {

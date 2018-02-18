@@ -100,7 +100,7 @@ let receivedAccountLink = event => {
 
   if (status === "unlinked") {
     db.deleteStudentByPSID(sender).then(() => {
-      handlers.loggedOut(sender, "YES")
+      handlers.loggedOut(sender)
     }).catch(error => {
       handlers.loggedOut(sender, error);
     });
@@ -118,6 +118,7 @@ app.post("/webhook", function (req, res) {
     pageEntry.messaging.forEach(function(messagingEvent) {
 
       let sender = messagingEvent.sender.id;
+      messenger.markSeen(sender);
 
       if (messagingEvent.message &&
           messagingEvent.message.text &&
@@ -171,7 +172,7 @@ let callHandler = (result, sender) => {
     let handler = handlers[result.handler];
     if (handler && typeof handler === "function") {
       console.log(result);
-      handler(sender, result.entities, result.params || {});
+      handler(sender, result.entities || {}, result.params || {});
     } else {
       console.log("Handler " + result.handler + " is not defined");
     }
