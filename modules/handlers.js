@@ -149,7 +149,8 @@ const hasDateEntity = entities => {
 };
 
 const isWholeNameGiven = entities => {
-  return !entities.first_name || !entities.last_name;
+  return (entities.first_name && !entities.last_name) ||
+         (!entities.first_name && entities.last_name);
 };
 
 const identifyStudent = exports.identifyStudent = (sender, entities, pendingReq) => {
