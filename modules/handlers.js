@@ -154,16 +154,7 @@ const isWholeNameGiven = entities => {
 
 const identifyStudent = exports.identifyStudent = (sender, entities, pendingReq) => {
 
-  if (!hasPersonEntity(entities)) {
-    // no student name specified
-    // will be requested with own personal stag number
-    getStagInfo(sender, info => {
-      resolveRequest(sender, pendingReq, info.stag_number);
-    });
-  } else if (isWholeNameGiven(entities)) {
-    // not given full name
-    messenger.sendText("Budu potřebovat celé jméno 😇", sender);
-  } else {
+  if (hasPersonEntity(entities)) {
     let name = {};
     name["jmeno"] = encodeURI(stem(entities.first_name));
     name["prijmeni"] = encodeURI(stem(entities.last_name));
@@ -196,6 +187,15 @@ const identifyStudent = exports.identifyStudent = (sender, entities, pendingReq)
       } else {
         messenger.sendText("Nikoho takové jsem nenašel, sorry ☹️", sender);
       }
+    });
+  } else if (isWholeNameGiven(entities)) {
+    // not given full name
+    messenger.sendText("Budu potřebovat celé jméno 😇", sender);
+  } else {
+    // no student name specified
+    // will be requested with own personal stag number
+    getStagInfo(sender, info => {
+      resolveRequest(sender, pendingReq, info.stag_number);
     });
   }
 };
