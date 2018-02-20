@@ -8,7 +8,7 @@ const
   formatter = require("./formatter"),
   stag = require("./stag"),
   pending = require("./pending"),
-  REPLY = require("./replies"),
+  reply = require("./replies"),
   { vokativ } = require('vokativ');
 
 moment.locale("cs"); // cs datetime locales
@@ -16,6 +16,16 @@ moment.locale("cs"); // cs datetime locales
 String.prototype.capitalize = function() {
     return this.charAt(0).toUpperCase() + this.slice(1).toLowerCase();
 };
+
+const WEEKDAYS_PREFIX = [
+  "v pondělí",
+  "v úterý",
+  "ve středu",
+  "ve čtvrtek",
+  "v pátek",
+  "v sobotu",
+  "v neděli"
+];
 
 const replyDate = (dateObj, withWeekday = true) => {
   if (!dateObj) {
@@ -32,7 +42,7 @@ const replyDate = (dateObj, withWeekday = true) => {
   } else {
     let formattedDate = dateObj.format("D.M.");
     if (withWeekday) {
-      formattedDate = `${REPLY.WEEKDAYS_PREFIX[dateObj.isoWeekday() - 1]} ${formattedDate}`;
+      formattedDate = `${WEEKDAYS_PREFIX[dateObj.isoWeekday() - 1]} ${formattedDate}`;
     }
     return formattedDate;
   }
@@ -68,7 +78,7 @@ const getStagInfo = (sender, cb, auth = false) => {
     .then(res => {
 
       if (res === db.STUDENT_NOT_FOUND) {
-        messenger.send(formatter.formatLogin(REPLY.LOGIN_NEEDED_MSG), sender);
+        messenger.send(formatter.formatLogin(reply("LOGIN_NEEDED")), sender);
       } else {
         cb(res);
       }
@@ -245,7 +255,7 @@ exports.noMatch = sender => {
   };
 
 exports.help = sender => {
-  messenger.send(formatter.formatHelp(`Seznam dostupných příkazů`), sender);
+  messenger.send(formatter.formatHelp(reply("HELP")), sender);
 };
 
 exports.upSearch = sender => {

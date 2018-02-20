@@ -10,7 +10,10 @@ const trainingSet = [
       "Pomoz mi, prosím",
       "Jaké jsou dostupné příkazy?",
       "Seznam dostupných příkazů",
-      "Nevím"
+      "Nevím",
+      "Co umíš?",
+      "Help",
+      "nápověda"
     ]
   },
   {
@@ -55,6 +58,7 @@ const trainingSet = [
   {
     class: "GetScheduleOnDate",
     sentences: [
+      "Mám být dnes ve škole?",
       "Jaký mám rozvrh?",
       "Jaký mám dnes rozvrh?",
       "Jaký mám zítra rozvrh?",
@@ -97,6 +101,7 @@ const trainingSet = [
   {
     class: "GetNumberOfExams",
     sentences: [
+      "kolik mě čeká zkoušek",
       "Počet zkoušek v aktuálním semestru",
       "Kolik mám tento semestr zkoušek?",
       "Kolik zbývá udělat zkoušek v tomto semestru"
@@ -161,6 +166,15 @@ const trainingSet = [
       "Kdy mi končí vyučování",
       "Konec vyučování",
       "Kdy končí poslední hodina?"
+    ]
+  },
+  {
+    class: "GetTeacherScheduleOnDate",
+    sentences: [
+      "Jaké předměty dnes vyučuje",
+      "Co dnes učí",
+      "Jaké předměty dnes vyučuje",
+      "Jaké hodiny učí"
     ]
   },
   {
