@@ -127,6 +127,16 @@ const intents = {
       "year": Entity.YEAR
     }
   },
+  "GetTeacherScheduleOnDate": {
+    handler: "dateTeacherSchedule",
+    entities: {
+      "first_name": Entity.FIRST_NAME,
+      "last_name": Entity.LAST_NAME,
+      "day": Entity.DAY,
+      "month": Entity.MONTH,
+      "year": Entity.YEAR
+    }
+  },
   "Swearing": {
     handler: "swearing"
   },

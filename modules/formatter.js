@@ -186,10 +186,35 @@ exports.formatSchedule = props => {
   props.forEach(event => {
     events.push({
       "title": event.hodinaSkutOd.value + " až " + event.hodinaSkutDo.value +
-               " je " + event.predmet,
+               " máš " + event.nazev,
       "subtitle": event.typAkce +
-                  " v " + event.budova + " " + event. mistnost +
+                  " je v " + event.budova + " " + event.mistnost +
                   " s " + event.ucitel.prijmeni
+    });
+  });
+
+  return {
+    "attachment":{
+      "type":"template",
+      "payload":{
+        "template_type":"generic",
+        "elements": events
+      }
+    }
+  };
+
+};
+
+exports.formatTeacherSchedule = props => {
+
+  let events = [];
+
+  props.forEach(event => {
+    events.push({
+      "title": event.hodinaSkutOd.value + " až " + event.hodinaSkutDo.value +
+               " učí " + event.nazev,
+      "subtitle": event.typAkce +
+                  " je v " + event.budova + " " + event.mistnost
     });
   });
 
@@ -234,6 +259,35 @@ exports.formatStudents = props => {
       "payload":{
         "template_type":"generic",
         "elements": students
+      }
+    }
+  };
+};
+
+exports.formatTeachers = props => {
+
+  let teachers = props.map((t, i) => {
+    let titulPred = t.titulPred ? t.titulPred + " " : "";
+    let titulZa = t.titulZa ? " " + t.titulZa : "";
+    let katedra = t.katedra ? " z pracoviště " + t.katedra : "";
+    return {
+      "title": `${titulPred}${t.jmeno} ${t.prijmeni}${titulZa}${katedra}`,
+      "buttons":[
+        {
+          "type":"postback",
+          "title":"Zvolit",
+          "payload": i
+        }
+      ]
+    };
+  });
+
+  return {
+    "attachment":{
+      "type":"template",
+      "payload":{
+        "template_type":"generic",
+        "elements": teachers
       }
     }
   };

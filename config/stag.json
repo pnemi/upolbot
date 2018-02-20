@@ -15,6 +15,12 @@
     "url": "predmety/getPredmetyByStudent",
     "params": ["osCislo", "semestr"]
   },
+  "najdiUcitelePodleJmena": {
+    "auth_req": false,
+    "url": "ucitel/najdiUcitelePodleJmena",
+    "params": ["jmeno", "prijmeni"],
+    "wildcard_params": ["jmeno", "prijmeni"]
+  },
   "getStudentPredmetyAbsolvoval": {
     "auth_req": true,
     "url": "student/getStudentPredmetyAbsolvoval",
@@ -31,6 +37,11 @@
     "url": "student/getStudentInfo",
     "params": ["osCislo"]
   },
+  "getUcitelInfo": {
+    "auth_req": false,
+    "url": "ucitel/getUcitelInfo",
+    "params": ["ucitIdno"]
+  },
   "getHarmonogramRoku": {
     "auth_req": false,
     "url": "kalendar/getHarmonogramRoku",
@@ -40,6 +51,11 @@
     "auth_req": false,
     "url": "kvalifikacniprace/getKvalifikacniPrace",
     "params": ["osCislo"]
+  },
+  "getRozvrhByUcitel": {
+    "auth_req": false,
+    "url": "rozvrhy/getRozvrhByUcitel",
+    "params": ["ucitIdno"]
   },
   "getRozvrhByStudent": {
     "auth_req": false,

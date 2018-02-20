@@ -186,12 +186,12 @@ const identifyStudent = exports.identifyStudent = (sender, entities, pendingReq)
       } else if (students.length === 1) {
         resolveRequest(sender, pendingReq, students[0][pendingReq.requirement]);
       } else {
-        messenger.sendText("Nikoho takové jsem nenašel, sorry ☹️", sender);
+        messenger.sendText("Žádného takového studenta jsem nenašel, sorry ☹️", sender);
       }
     });
   } else if (isWholeNameGiven(entities)) {
     // not given full name
-    messenger.sendText("Budu potřebovat celé jméno 😇", sender);
+    messenger.sendText("Budu potřebovat celé jméno studenta 😇", sender);
   } else {
     // no student name specified
     // will be requested with own personal stag number
@@ -201,9 +201,48 @@ const identifyStudent = exports.identifyStudent = (sender, entities, pendingReq)
   }
 };
 
-exports.noMatch = sender => {
-  messenger.sendText(`Já nevím, co tím myslíš 😢`, sender);
+const identifyTeacher = exports.identifyTeacher = (sender, entities, pendingReq) => {
+
+  if (hasPersonEntity(entities)) {
+    let name = {};
+    name["jmeno"] = encodeURI(stem(entities.first_name));
+    name["prijmeni"] = encodeURI(stem(entities.last_name));
+
+    stagRequest(sender, "najdiUcitelePodleJmena", name, res => {
+      let teachers = res.ucitel;
+      if (teachers.length > 1) {
+        Promise.all(
+          teachers.map(t => {
+            return stag.request("getUcitelInfo", {"ucitIdno": t.ucitIdno});
+          })
+        )
+        .then(teachersInfo => {
+          let stagNumbers = teachers.map(t => t.ucitIdno);
+          pendingReq.options = stagNumbers;
+          pending.enqueuePostback(sender, pendingReq);
+          messenger.send(formatter.formatTeachers(teachersInfo), sender);
+        })
+        .catch(err => stagError(sender, err));
+
+      } else if (teachers.length === 1) {
+        resolveRequest(sender, pendingReq, teachers[0][pendingReq.requirement]);
+      } else {
+        messenger.sendText("Žádného takového učitele jsem nenašel, sorry ☹️", sender);
+      }
+    });
+  } else if (isWholeNameGiven(entities)) {
+    // not given full name
+    messenger.sendText("Budu potřebovat celé jméno učitele 😇", sender);
+  } else {
+    // no tacher name specified
+    messenger.sendText("Budu potřebovat jméno učitele 😇", sender);
+  }
 };
+
+exports.noMatch = sender => {
+  messenger.send(formatter.formatHelp(
+    `Já nevím, co tím myslíš 😢\nKoukni na seznam dostupných příkazů 👇`), sender);
+  };
 
 exports.help = sender => {
   messenger.send(formatter.formatHelp(`Seznam dostupných příkazů`), sender);
@@ -267,11 +306,19 @@ exports.thesis = (sender, entities) => {
 
 };
 
-const reqSchedule = exports.reqSchedule = (sender, params, cb) => {
-  stagRequest(sender, "getRozvrhByStudent", params, res => {
+const reqSchedule = exports.reqSchedule = (sender, action, params, cb) => {
+  stagRequest(sender, action, params, res => {
     let events = res.rozvrhovaAkce;
     cb(events);
   });
+};
+
+const reqStudentSchedule = exports.reqStudentSchedule = (sender, params, cb) => {
+  reqSchedule(sender, "getRozvrhByStudent", params, cb);
+};
+
+const reqTeacherSchedule = exports.reqTeacherSchedule = (sender, params, cb) => {
+  reqSchedule(sender, "getRozvrhByUcitel", params, cb);
 };
 
 exports.dateSchedule = (sender, entities) => {
@@ -279,7 +326,7 @@ exports.dateSchedule = (sender, entities) => {
   let request = {
     "params": {},
     "requirement": "osCislo",
-    "handler": "reqSchedule"
+    "handler": "reqStudentSchedule"
   };
 
   let dateStr;
@@ -306,12 +353,44 @@ exports.dateSchedule = (sender, entities) => {
 
 };
 
+exports.dateTeacherSchedule = (sender, entities) => {
+
+  let request = {
+    "params": {},
+    "requirement": "ucitIdno",
+    "handler": "reqTeacherSchedule"
+  };
+
+  let dateStr;
+  if (hasDateEntity(entities)) {
+    dateStr = getDateStr(entities);
+  } else {
+    // fallback to today schedule
+    dateStr = getTodayDateStr();
+  }
+
+  let dateObj = moment(dateStr, "DD.MM.YYYY");
+
+  request.responseCallback = events => {
+    if (events.length === 0) {
+      messenger.sendText(`${replyDate(dateObj).capitalize()} neučí 🤔`, sender);
+    } else {
+      messenger.send(formatter.formatTeacherSchedule(events), sender);
+    }
+  };
+
+  request.params["datumOd"] = request.params["datumDo"] = dateStr;
+
+  identifyTeacher(sender, entities, request);
+
+};
+
 exports.nextSemesterBeginning = (sender, entities) => {
 
   identifyStudent(sender, entities, {
     params: {},
     requirement: "osCislo",
-    handler: "reqSchedule",
+    handler: "reqStudentSchedule",
     responseCallback: events => {
       let message;
       if (events.length === 0) {
@@ -348,7 +427,7 @@ exports.nextSemesterEnd = (sender, entities) => {
   identifyStudent(sender, entities, {
     params: {},
     requirement: "osCislo",
-    handler: "reqSchedule",
+    handler: "reqStudentSchedule",
     responseCallback: events => {
       let message;
       if (events.length === 0) {
@@ -621,7 +700,7 @@ exports.firstLessonBeginning = (sender, entities) => {
       "datumDo": dateStr
     },
     requirement: "osCislo",
-    handler: "reqSchedule",
+    handler: "reqStudentSchedule",
     responseCallback: events => {
       let message;
       if (events.length === 0) {
@@ -654,7 +733,7 @@ exports.lastLessonEnd = (sender, entities) => {
       "datumDo": dateStr
     },
     requirement: "osCislo",
-    handler: "reqSchedule",
+    handler: "reqStudentSchedule",
     responseCallback: events => {
       let message;
       if (events.length === 0) {
