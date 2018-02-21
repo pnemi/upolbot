@@ -1,8 +1,7 @@
 const
   classify = require("./classification/classifier"),
   intents = require("./classification/intents"),
-  extract = require("./tagging/extraction"),
-  normalizeTime = require("./tagging/timex/normalizer").normalizeTime;
+  extract = require("./tagging/extraction");
 
 
 const understand = sentence => {
@@ -13,7 +12,6 @@ const understand = sentence => {
   let intent = intents[response.intent];
   if (true || "entities" in intent) {
     response.entities = extract(sentence, intent.entities);
-    normalizeTime(response);
   }
   response.params = intents[response.intent].params || {};
 

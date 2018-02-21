@@ -2,7 +2,8 @@ const
   tokenize   = require("../tokenizer"),
   // lemmas = require("../lemma/lemmatizer"),
   POSTagger = require("./pos/POSTagger"),
-  NERTagger = require("./ner/NERTagger");
+  NERTagger = require("./ner/NERTagger"),
+  normalizeTime = require("./timex/normalizer").normalizeTime;
 
 let pos, ner;
 
@@ -64,6 +65,8 @@ const extract = (sentence, entities) => {
       }
     }
   }
+
+  normalizeTime(extracted, nerTags);
 
   return extracted;
 
