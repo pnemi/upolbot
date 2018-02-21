@@ -47,7 +47,7 @@ const extractIOB = (tags, entities) => {
   }
 };
 
-const extract = (sentence, entities) => {
+const extract = (sentence, entities = {}, intent) => {
   let tokens = tokenize(sentence, false).map(token => token.text);
   let posTags = pos.getPartOfSpeech(tokens);
   let nerTags = ner.getEntities(posTags);
@@ -66,7 +66,9 @@ const extract = (sentence, entities) => {
     }
   }
 
-  normalizeTime(extracted, nerTags);
+  if (entities.day || entities.month) {
+    normalizeTime(extracted, nerTags);
+  }
 
   return extracted;
 

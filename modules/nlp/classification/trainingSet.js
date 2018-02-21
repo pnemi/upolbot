@@ -60,6 +60,7 @@ const trainingSet = [
     sentences: [
       "Mám být dnes ve škole?",
       "Jaký mám rozvrh?",
+      "Jaký rozvrh mám tento",
       "Jaký mám dnes rozvrh?",
       "Jaký mám zítra rozvrh?",
       "Jaký mám rozvrh hodin?",

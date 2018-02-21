@@ -1,7 +1,7 @@
 "use strict";
 
 const
-  env = require("../config/env"),
+  env = require("./env"),
   stem = require('czech-stemmer/light.js'),
   messenger = require("./messenger"),
   moment = require("moment"),
