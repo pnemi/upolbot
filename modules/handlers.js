@@ -1,6 +1,7 @@
 "use strict";
 
 const
+  env = require("../config/env"),
   stem = require('czech-stemmer/light.js'),
   messenger = require("./messenger"),
   moment = require("moment"),
@@ -9,7 +10,8 @@ const
   stag = require("./stag"),
   pending = require("./pending"),
   reply = require("./replies"),
-  { vokativ } = require('vokativ');
+  { vokativ } = require('vokativ'),
+  giphy = require('giphy-api')(env.GIPHY_API_KEY);
 
 moment.locale("cs"); // cs datetime locales
 
@@ -140,7 +142,12 @@ exports.stagAuth = sender => {
  */
 
  exports.swearing = sender => {
-   messenger.sendText("Prosím, nešlo by to bez těch vulgarit? 🤬", sender)
+   messenger.sendText("Prosím, nešlo by to bez těch vulgarit? 🤬", sender);
+   if (Math.random() < 0.5) {
+     giphy.random("sad", (err, res) => {
+       messenger.send(formatter.formatGIF(res.data), sender);
+     });
+   }
  };
 
 // Resolve request apriori (one student found)

@@ -61,6 +61,18 @@ exports.formatHelp = message => {
   };
 };
 
+exports.formatGIF = props => {
+  return {
+    "attachment":{
+      "type":"image",
+      "payload":{
+        "url": props.fixed_height_downsampled_url,
+        "is_reusable": true
+      }
+    }
+  };
+};
+
 exports.formatUPSearch = message => {
   return {
     "attachment":{

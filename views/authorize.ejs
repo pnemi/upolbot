@@ -1,72 +1,133 @@
+<!DOCTYPE html>
 <html>
 <head>
-  <title>OAuth Test</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-  <style>
+  <meta charset="utf-8">
+  <title>Přihlášení</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  div {
-    margin: 10px 0 10px 0;
+  <style media="screen">
+
+  html, body {
+    font-family: Palatino;
+    letter-spacing: .02em;
+    padding: 0;
+    margin: 0;
+  }
+
+  header {
+    background-color: #006FAD;
+  }
+
+  header .info {
+    text-align: center;
+    font-size: 150%;
+    font-weight: bold;
+    padding: 15px;
+    color: white;
+  }
+
+  div.container {
+    max-width: 400px;
+    margin: auto;
+    padding: 0 15px;
   }
 
   #auth-failed {
     color: red;
   }
 
-  p#info {
+  p.info {
     color: grey;
+    margin: 20px 0;
+    text-align: center;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 14px;
   }
 
   .form-group input {
-    border-radius: 0;
-  }
-
-  button.btn {
     width: 100%;
     border-radius: 0;
+    padding: 5px 8px;
+    font-size: 16px;
+    outline: none;
+    box-shadow: none;
+    border: 1px solid #ccc;
+    transition: border 500ms ease-out;
   }
-  
+
+  .form-group input:focus {
+    border-color: #006FAD;
+  }
+
+  .form-group button.btn {
+    width: 100%;
+    border-radius: 0;
+    background-color: #20b956;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 500ms ease-out;
+  }
+
+  .form-group button.btn:hover,
+  .form-group button.btn:active {
+    background-color: #1da74e;
+  }
+
   </style>
 </head>
 <body>
 
+  <header>
+    <div class="info">Přihlášení do STAG</div>
+  </header>
+
   <div class="container">
-    <div class="row">
-      <div class="col-md-6 col-md-offset-3">
 
-        <h1>Přihlášení do STAG</h1>
+    <p class="info">Použijte své přihlašovací údaje do <a href="http://portal.upol.cz/">Portálu</a></p>
 
-        <p id="info">Použijte své přihlašovací údaje do <a href="http://portal.upol.cz/">Portálu</a></p>
+    <form action="/authorize" method="post" id="stag-auth">
 
-        <form action="/authorize" method="post" id="stag-auth">
-
-          <%if (authFailed) { %>
-            <p id="auth-failed">Chybně zadané heslo nebo uživatelské jméno</p>
-          <% } %>
-
-          <div class="form-group">
-            <label for="login">Uživatelské jméno</label>
-            <input type="text" class="form-control" id="login" name="login">
-          </div>
-
-          <div class="form-group">
-            <label for="password">Heslo</label>
-            <input type="password" class="form-control" id="password" name="password">
-          </div>
-
-          <input type="hidden" id="redirectURISuccess" name="redirectURI" value="<%= redirectURI %>">
-
-          <input type="hidden" id="redirectURISuccess" name="redirectURISuccess" value="<%= redirectURISuccess %>">
-
-          <input type="hidden" id="accountLinkingToken" name="accountLinkingToken" value="<%= accountLinkingToken %>">
-
-          <div class="form-group">
-            <button type="submit" class="btn btn-default">Přihlásit</button>
-          </div>
-        </form>
+      <div class="form-group">
+        <label for="login">Uživatelské jméno (Portál ID)</label>
+        <input type="text" class="form-control" id="login" name="login">
       </div>
-    </div>
-  </div>
 
-</body>
-</html>
+      <div class="form-group">
+        <label for="password">Heslo</label>
+        <input type="password" class="form-control" id="password" name="password">
+      </div>
+
+      <%if (authFailed) { %>
+        <p id="auth-failed">Uživatelské jméno nebo heslo není správné 😱</p>
+        <% } %>
+
+        <input type="hidden" id="redirectURISuccess" name="redirectURI" value="<%= redirectURI %>">
+
+        <input type="hidden" id="redirectURISuccess" name="redirectURISuccess" value="<%= redirectURISuccess %>">
+
+        <input type="hidden" id="accountLinkingToken" name="accountLinkingToken" value="<%= accountLinkingToken %>">
+
+        <div class="form-group">
+          <button type="submit" class="btn btn-default">Přihlásit</button>
+        </div>
+      </form>
+
+    </div>
+
+  </body>
+  </html>

@@ -24,13 +24,13 @@
     "dictionary-cs": "^2.0.0",
     "ejs": "^2.5.5",
     "express": "^4.14.0",
+    "giphy-api": "^1.2.7",
     "hat": "0.0.3",
-    "moment": "^2.17.1",
-    "nspell": "^1.0.3",
-    "pg": "^6.1.2",
+    "moment": "^2.20.1",
+    "nspell": "^1.0.5",
+    "pg": "^7.4.1",
     "prefix-tree": "^1.0.1",
     "request": "^2.79.0",
-    "vokativ": "^1.0.1",
-    "xml-js": "^1.5.2"
+    "vokativ": "^1.0.1"
   }
 }
