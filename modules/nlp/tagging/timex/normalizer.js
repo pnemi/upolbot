@@ -2,6 +2,8 @@ const
   dice = require("dice-coefficient"),
   moment = require("moment");
 
+moment.locale("cs");
+
 const IS_NUMERIC = /^\d+$/;
 
 Array.prototype.flatMap = function(lambda) {
