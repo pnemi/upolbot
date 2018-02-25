@@ -5,8 +5,8 @@ env = require("./env");
 
 const AUTH_URL = env.SERVER_URL + "/authorize";
 const HELP_URL = env.SERVER_URL + "/help";
-const UPSEARCH_URL = "http://search.inf.upol.cz/";
-const UPSEARCH_LOGO = UPSEARCH_URL + "static/images/upol-search-logo-chatbot.png"
+const UPSEARCH_URL = "https://search.inf.upol.cz/";
+const UPSEARCH_LOGO = UPSEARCH_URL + "static/images/upol-search-logo-chatbot.png";
 
 let capitalizeFirstLetter = string => {
   return string[0].toUpperCase() + string.slice(1);
@@ -86,13 +86,17 @@ exports.formatUPSearch = message => {
             "image_url": UPSEARCH_LOGO,
             "default_action": {
               "type": "web_url",
-              "url": UPSEARCH_URL
+              "url": UPSEARCH_URL,
+              "webview_height_ratio": "full",
+              "messenger_extensions": true
             },
             "buttons":[
               {
                 "type":"web_url",
                 "url": UPSEARCH_URL,
-                "title": "Otevřít"
+                "title": "Otevřít",
+                "webview_height_ratio": "full",
+                "messenger_extensions": true
               }
             ]
           }
