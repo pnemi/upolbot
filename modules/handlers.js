@@ -33,7 +33,7 @@ const replyDate = (dateObj, withWeekday = true) => {
   if (!dateObj) {
     return "dnes";
   }
-  let today = moment();
+  let today = moment().startOf("day");
   let daysDiff = dateObj.diff(today, "days");
   if (daysDiff === 0) {
     return "dnes";

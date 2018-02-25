@@ -68,19 +68,19 @@ const TEMPORAL_ABS_EXPRS = [
   },
   {
     exprs: ["zítra", "zítřejší"],
-    getNorm: date => date.add(1, "day")
+    getNorm: () => moment().add(1, "day")
   },
   {
     exprs: ["pozítří"],
-    getNorm: date => date.add(2, "day")
+    getNorm: () => moment().add(2, "day")
   },
   {
     exprs: ["včera", "včerejší"],
-    getNorm: date => date.subtract(1, "day")
+    getNorm: () => moment().subtract(1, "day")
   },
   {
     exprs: ["předevčířem", "předvčera"],
-    getNorm: date => date.subtract(2, "day")
+    getNorm: () => moment().subtract(2, "day")
   },
   {
     exprs: ["pondělí"],
