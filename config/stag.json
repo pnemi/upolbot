@@ -4,11 +4,21 @@
     "url": "users/getStagUserListForExternalLogin",
     "params": ["externalLogin"]
   },
+  "getSeznamPracovist": {
+    "auth_req": false,
+    "url": "ciselniky/getSeznamPracovist",
+    "params": ["zkratka"]
+  },
   "getStagUserForActualUser": {
     "note": "Na ověření přihlášení",
     "auth_req": true,
     "url": "help/getStagUserForActualUser",
     "params": []
+  },
+  "getKalendarRoku": {
+    "auth_req": false,
+    "url": "kalendar/getKalendarRoku",
+    "params": ["datum"]
   },
   "getPredmetyByStudent": {
     "auth_req": false,

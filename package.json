@@ -5,29 +5,28 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://pnemi@github.com/pnemi/UPOLBot.git"
+    "url": "git+https://pnemi@github.com/pnemi/UPolak.git"
   },
   "author": "Petr Němeček",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/pnemi/UPOLBot/issues"
+    "url": "https://github.com/pnemi/UPolak/issues"
   },
-  "homepage": "https://github.com/pnemi/UPOLBot#readme",
+  "homepage": "https://github.com/pnemi/UPolak#readme",
   "dependencies": {
     "body-parser": "^1.15.2",
     "czech-stemmer": "^0.1.0",
     "dice-coefficient": "^1.0.2",
-    "dictionary-cs": "^2.0.0",
     "ejs": "^2.5.5",
     "express": "^4.14.0",
     "giphy-api": "^1.2.7",
     "hat": "0.0.3",
-    "moment": "^2.20.1",
-    "nspell": "^1.0.5",
+    "moment": "^2.21.0",
     "pg": "^7.4.1",
     "prefix-tree": "^1.0.1",
     "request": "^2.79.0",

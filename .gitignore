@@ -8,3 +8,7 @@ ngrok
 vault
 config/env.json
 localtunnel.sh
+**/tagging/pos/model.json
+**/tagging/pos/corpus/*
+**/tagging/ner/model.json
+**/tagging/ner/corpus/*

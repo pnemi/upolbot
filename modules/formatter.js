@@ -8,10 +8,6 @@ const HELP_URL = env.SERVER_URL + "/help";
 const UPSEARCH_URL = "https://search.inf.upol.cz/";
 const UPSEARCH_LOGO = UPSEARCH_URL + "static/images/upol-search-logo-chatbot.png";
 
-let capitalizeFirstLetter = string => {
-  return string[0].toUpperCase() + string.slice(1);
-}
-
 exports.formatWelcome = message => {
   return {
     "attachment":{
@@ -112,7 +108,7 @@ exports.formatLogin = message => {
       "type":"template",
       "payload":{
         "template_type": "button",
-        "text": message || "Přihlášení do studijní agendy (STAG)",
+        "text": message,
         "buttons":[
           {
             "type":"account_link",
@@ -124,13 +120,13 @@ exports.formatLogin = message => {
   };
 };
 
-exports.formatLogout = stagID => {
+exports.formatLogout = message => {
   return {
     "attachment":{
       "type":"template",
       "payload":{
         "template_type": "button",
-        "text": `Jsi přihlášen jako ${stagID} 🙂\nOdhlášení ze studijní agendy (STAG)`,
+        "text": message,
         "buttons":[
           {
             "type":"account_unlink"
@@ -148,7 +144,7 @@ exports.formatThesis = (props) => {
   props.forEach(thesis => {
     let element = {
       "title": thesis.temaHlavni,
-      "subtitle": capitalizeFirstLetter(thesis.typPrace) + " práce"
+      "subtitle": thesis.typPrace.capitalize() + " práce"
     };
     let buttons = [];
 
@@ -195,14 +191,14 @@ exports.formatThesis = (props) => {
   };
 };
 
-exports.formatSchedule = props => {
+exports.formatStudentSchedule = props => {
 
   let events = [];
 
   props.forEach(event => {
     events.push({
       "title": event.hodinaSkutOd.value + " až " + event.hodinaSkutDo.value +
-               " máš " + event.nazev,
+               " – " + event.nazev,
       "subtitle": event.typAkce +
                   " je v " + event.budova + " " + event.mistnost +
                   " s " + event.ucitel.prijmeni
@@ -228,7 +224,7 @@ exports.formatTeacherSchedule = props => {
   props.forEach(event => {
     events.push({
       "title": event.hodinaSkutOd.value + " až " + event.hodinaSkutDo.value +
-               " učí " + event.nazev,
+               " – " + event.nazev,
       "subtitle": event.typAkce +
                   " je v " + event.budova + " " + event.mistnost
     });

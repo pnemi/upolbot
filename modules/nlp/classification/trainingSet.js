@@ -36,6 +36,13 @@ const trainingSet = [
     ]
   },
   {
+    class: "HeadOrTail",
+    sentences: [
+      "panna nebo orel?",
+      "hoď mincí"
+    ]
+  },
+  {
     class: "IsWeekOddOrEven",
     sentences: [
       "Jaký je týden?",
@@ -56,7 +63,7 @@ const trainingSet = [
     ]
   },
   {
-    class: "GetScheduleOnDate",
+    class: "GetSchedule",
     sentences: [
       "Mám být dnes ve škole?",
       "Jaký mám rozvrh?",
@@ -65,6 +72,15 @@ const trainingSet = [
       "Jaký mám zítra rozvrh?",
       "Jaký mám rozvrh hodin?",
       "Ukaž mi rozvrh na den"
+    ]
+  },
+  {
+    class: "GetTeacherSchedule",
+    sentences: [
+      "Jaké předměty dnes vyučuje",
+      "Co dnes učí",
+      "Jaké předměty dnes vyučuje",
+      "Jaké hodiny učí"
     ]
   },
   {
@@ -157,7 +173,8 @@ const trainingSet = [
       "Kdy začíná vyučování?",
       "Kdy mi začíná vyučování?",
       "Začátek vyučování",
-      "Kdy začíná první hodina?"
+      "Kdy začíná první hodina?",
+      "Kdy začíná škola?"
     ]
   },
   {
@@ -166,16 +183,8 @@ const trainingSet = [
       "Kdy končí vyučování",
       "Kdy mi končí vyučování",
       "Konec vyučování",
-      "Kdy končí poslední hodina?"
-    ]
-  },
-  {
-    class: "GetTeacherScheduleOnDate",
-    sentences: [
-      "Jaké předměty dnes vyučuje",
-      "Co dnes učí",
-      "Jaké předměty dnes vyučuje",
-      "Jaké hodiny učí"
+      "Kdy končí poslední hodina?",
+      "Kdy končí škola?"
     ]
   },
   {

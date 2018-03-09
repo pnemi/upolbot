@@ -32,7 +32,8 @@
     padding: 0 15px;
   }
 
-  #auth-failed {
+  #error {
+    text-align: center;
     color: red;
   }
 
@@ -112,8 +113,8 @@
         <input type="password" class="form-control" id="password" name="password">
       </div>
 
-      <%if (authFailed) { %>
-        <p id="auth-failed">Uživatelské jméno nebo heslo není správné 😱</p>
+      <%if (unsuccessful) { %>
+        <p id="error"><%= error %></p>
         <% } %>
 
         <input type="hidden" id="redirectURI" name="redirectURI" value="<%= redirectURI %>">

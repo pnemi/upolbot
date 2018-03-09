@@ -13,7 +13,8 @@ const
   env = require("./modules/env"),
   understand = require("./modules/nlp/understand"),
   loadModels = require("./modules/nlp/tagging/extraction").loadModels,
-  pending = require("./modules/pending");
+  pending = require("./modules/pending"),
+  utils = require("./utils");
 
 var app = express();
 
@@ -43,32 +44,40 @@ app.post("/authorize", (req, res, next) => {
     password: req.body.password
   };
 
-  let promStagUser = stag.request("getStagUserForActualUser", [], auth);
+  let promStagUser = stag.login(auth);
   let promPSID = messenger.getPSID(req.body.accountLinkingToken);
 
-  Promise.all([promStagUser, promPSID]).then(values => {
+  Promise.all([promStagUser, promPSID])
+    .then(values => {
     let stagNumber = values[0].userName;
     let psid = values[1].recipient;
     db.insertStudent(psid, auth.user, auth.password, stagNumber)
-    .then(() => {
-      handlers["loggedIn"](psid);
-      res.redirect(req.body.redirectURISuccess);
-    }).catch(reason => {
-      console.log(reason);
-    });
-  }).catch(reason => {
-    if (reason === "UNAUTHORIZED") {
+      .then(() => {
+        handlers["loggedIn"](psid);
+        res.redirect(req.body.redirectURISuccess);
+      })
+      .catch(reason => {
+        console.log(reason);
+      });
+    })
+    .catch(reason => {
+      let errorMsg;
+      if (reason === "UNAUTHORIZED") {
+        errorMsg = "Uživatelské jméno nebo heslo není správné 😱";
+      } else if (reason === "NOT_STUDENT") {
+        errorMsg = "Přihlásit se mohou pouze studenti 👨‍🎓";
+      }
 
       let locals = {
         accountLinkingToken: req.body.accountLinkingToken,
         redirectURI: req.body.redirectURI,
         redirectURISuccess: req.body.redirectURISuccess,
-        authFailed: true
+        unsuccessful: true,
+        error: errorMsg
       };
 
       res.render("authorize", locals);
-    }
-  });
+    });
 });
 
 app.get("/authorize", function(req, res) {
@@ -82,7 +91,7 @@ app.get("/authorize", function(req, res) {
     accountLinkingToken: accountLinkingToken,
     redirectURI: redirectURI,
     redirectURISuccess: redirectURI + "&authorization_code=" + authCode,
-    authFailed: false
+    unsuccessful: false
   };
 
   res.render("authorize", locals);
@@ -99,9 +108,11 @@ let receivedAccountLink = event => {
   let status = event.account_linking.status;
 
   if (status === "unlinked") {
-    db.deleteStudentByPSID(sender).then(() => {
+    db.deleteStudentByPSID(sender)
+    .then(() => {
       handlers.loggedOut(sender)
-    }).catch(error => {
+    })
+    .catch(error => {
       handlers.loggedOut(sender, error);
     });
   }

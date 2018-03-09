@@ -49,10 +49,17 @@ class NERTagger extends Perceptron {
     add(`AT ${ctx.pos[i - 1]}`);
     add(`AN ${ctx.iob[i - 1]}`); //
     add(`|W ${word}`);
-    add(`|WS ${this._getWordShape(word)}`);
-    add(`|SUF ${word.substr(-2)}`);
+    // add(`|WS ${this._getWordShape(word)}`);
+    add(`|S3 ${word.substr(-3)}`);
     add(`|T ${ctx.pos[i]}`);
     add(`aT ${ctx.pos[i + 1]}`);
+
+    // newly added
+    add(`|L ${word.length}`);
+    add(`|P1 ${word.substr(0)}`);
+    add(`|O ${+(i === 0)}`);
+    add(`|U ${+(UPPER_WORD.test(word.charAt(0)))}`);
+    add(`|NUM ${+(NUMERIC.test(word))}`);
 
     return features;
   }

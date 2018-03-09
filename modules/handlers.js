@@ -9,70 +9,41 @@ const
   formatter = require("./formatter"),
   stag = require("./stag"),
   pending = require("./pending"),
-  reply = require("./replies"),
+  { reply, formatDate, getTeacherAddressing } = require("./responder"),
+  MSG = require("./replies"),
   { vokativ } = require('vokativ'),
   giphy = require('giphy-api')(env.GIPHY_API_KEY);
 
 moment.locale("cs"); // cs datetime locales
 
-String.prototype.capitalize = function() {
-    return this.charAt(0).toUpperCase() + this.slice(1).toLowerCase();
-};
-
-const WEEKDAYS_PREFIX = [
-  "v pondělí",
-  "v úterý",
-  "ve středu",
-  "ve čtvrtek",
-  "v pátek",
-  "v sobotu",
-  "v neděli"
-];
-
-const replyDate = (dateObj, withWeekday = true) => {
-  if (!dateObj) {
-    return "dnes";
-  }
-  let today = moment().startOf("day");
-  let daysDiff = dateObj.diff(today, "days");
-  if (daysDiff === 0) {
-    return "dnes";
-  } else if (daysDiff === 1) {
-    return "zítra";
-  } else if (daysDiff === -1) {
-    return "včera";
-  } else {
-    let formattedDate = dateObj.format("D.M.");
-    if (withWeekday) {
-      formattedDate = `${WEEKDAYS_PREFIX[dateObj.isoWeekday() - 1]} ${formattedDate}`;
-    }
-    return formattedDate;
-  }
-};
+/**
+ * Error Handling
+ */
 
 const stagError = (sender, err) => {
   console.error(err);
-  messenger.sendText(
-    "Něco se 💩 ve studijní agendě, zkus to prosím znovu. Nezlob se 😕",
-    sender
-  );
+  let message;
+  if (err === "UNAUTHORIZED") {
+    message = reply(MSG.STAG_WRONG_PASSWORD);
+  } else {
+    message = reply(MSG.STAG_ERR);
+  }
+  messenger.sendText(message, sender);
 };
 
 const dbError = (sender, err) => {
   console.error(err);
-  messenger.sendText(
-    "Něco se 💩 s databází, zkus to prosím znovu. Nezlob se 😕",
-    sender
-  );
+  messenger.sendText(reply(MSG.DB_ERR), sender);
 };
 
 const messengerError = (sender, err) => {
   console.error(err);
-  messenger.sendText(
-    "Něco se 💩 V Messengeru, zkus to prosím znovu. Nezlob se 😕",
-    sender
-  );
+  messenger.sendText(reply(MSG.MESSENGER_ERR), sender);
 };
+
+/**
+ * Database and STAG API info retrieval callback helpers
+ */
 
 const getStagInfo = (sender, cb, auth = false) => {
   let dbHandler = auth ? db.selectStudentWithAuthByPSID : db.selectStudentByPSID;
@@ -80,7 +51,7 @@ const getStagInfo = (sender, cb, auth = false) => {
     .then(res => {
 
       if (res === db.STUDENT_NOT_FOUND) {
-        messenger.send(formatter.formatLogin(reply("LOGIN_NEEDED")), sender);
+        messenger.send(formatter.formatLogin(reply(MSG.LOGIN_NEEDED)), sender);
       } else {
         cb(res);
       }
@@ -96,83 +67,353 @@ const stagRequest = (sender, url, params, cb, auth) => {
 };
 
 /**
- * Payload handlers section
+ * Payload handlers
  */
 
 exports.welcome = sender => {
   getVocative(sender, addressing => {
-    messenger.sendText(`Čau, ${addressing}, já jsem UPolák 🤓`, sender);
+    messenger.sendText(reply(MSG.WELCOME, {addressing}), sender);
     messenger.send(formatter.formatWelcome(), sender);
   });
 };
 
 exports.loggedIn = sender => {
-  messenger.sendText("Byl jsi přihlášen ✌️ Budeš-li se chtít odhlásit, zvol volbu STAG Účet v menu.", sender);
+  messenger.sendText(reply(MSG.LOGGED_IN), sender);
 };
 
 exports.loggedOut = (sender, err) => {
   let message;
   if (!err) {
-    message = "Odhlásil jsem tě 👌 Budeš-li se chtít znovu přihlásit, zvol volbu STAG Účet v menu."
+    message = reply(MSG.LOGGED_OUT);
   } else {
-    message = "Něco se 💩 a nemohl jsem tě odhlásit, zkus to prosím znovu. Sorry 😕"
+    message = reply(MSG.LOGOUT_ERR);
   }
   messenger.sendText(message, sender);
 };
 
 exports.stagAuth = sender => {
 
-  db.existsStudentByPSID(sender).then(exists => {
-    if (exists) {
-      getStagInfo(sender, info => {
-        messenger.send(formatter.formatLogout(info.stag_number), sender)
-      });
-    } else {
-      messenger.send(formatter.formatLogin(), sender);
-    }
-  }).catch(err => {
-    console.error(err);
-    messenger.sendText("Něco se 💩 při přihlášení, zkus to prosím znovu. Nezlob se 😕", sender);
-  });
+  db.existsStudentByPSID(sender)
+    .then(exists => {
+      if (exists) {
+        getStagInfo(sender, info => {
+          let stagID = info.stag_number;
+          messenger.send(
+            formatter.formatLogout(reply(MSG.LOG_OUT, {stagID})),
+            sender
+          );
+        });
+      } else {
+        messenger.send(formatter.formatLogin(reply(MSG.LOG_IN)), sender);
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      messenger.sendText(reply(MSG.STAG_AUTH_ERR), sender);
+    });
+};
 
+exports.help = sender => {
+  messenger.send(formatter.formatHelp(reply(MSG.HELP)), sender);
+};
+
+exports.upSearch = sender => {
+  messenger.send(formatter.formatUPSearch(), sender);
 };
 
 /**
- * Intents handlers section
+ * Identification (student(s) and/or teacher(s)) handlers
  */
 
- exports.swearing = sender => {
-   messenger.sendText("Prosím, nešlo by to bez těch vulgarit? 🤬", sender);
-   if (Math.random() < 0.5) {
-     giphy.random("sad", (err, res) => {
-       messenger.send(formatter.formatGIF(res.data), sender);
+ const FILTER_CRITERIA = {
+   student: [
+     "progNazev",
+     "progTyp",
+     "progForma",
+     "userName"
+   ],
+   teacher: [
+     "katedra",
+     "ucitIdno"
+   ]
+ };
+
+ const joinMultipleSubject = arr => {
+   return [
+     ...arr.slice(0, arr.length - 2),
+     arr.slice(-2).join(" nebo ")
+   ].join(", ") + "?";
+ };
+
+ const isNameComplete = entities => {
+   return entities.first_name && entities.last_name;
+ };
+
+ const isNameIncomplete = entities => {
+   return (entities.first_name && !entities.last_name) ||
+          (!entities.first_name && entities.last_name);
+ };
+
+ const noPersonFound = (sender, req) => {
+   messenger.sendText(reply(MSG.PERSON_NOT_FOUND), sender);
+ };
+
+ const personFound = (sender, req) => {
+   let [result] = req.data;
+
+   if (req.params.role === "student") {
+     req.stagParams.osCislo = result.osCislo;
+   } else if (req.params.role === "teacher") {
+     req.stagParams.ucitIdno = result.ucitIdno;
+   }
+
+   req.params.person = {
+     first_name: result.jmeno,
+     last_name: result.prijmeni
+   };
+
+   this[req.fullfilledCallback](sender, req);
+ };
+
+ const getStudentDetails = (sender, req) => {
+   let students = req.data;
+
+   Promise.all(students.map(s => {
+     return stag.request("getOborInfo", {"oborIdno": s.oborIdnos});
+   }))
+   .then(programs => {
+     programs.forEach((prog, i) => {
+       req.data[i].progNazev = prog.nazev;
+       req.data[i].progTyp = prog.typ;
+       req.data[i].progForma = prog.forma;
+     });
+     req.detailsRetrieved = true;
+     distinguishPerson(sender, req);
+   })
+   .catch(err => stagError(sender, err));
+
+ };
+
+ const getTeacherDetails = (sender, req) => {
+   let teachers = req.data;
+
+   Promise.all(
+     teachers.map(t => {
+       return stag.request("getUcitelInfo", {"ucitIdno": t.ucitIdno});
+     }))
+   .then(info => {
+     Promise.all(
+       info.map(item => {
+         return stag.request("getSeznamPracovist", {"zkratka": item.katedra});
+       }))
+     .then(workplaces => {
+       workplaces.forEach((w, i) => {
+         req.data[i].katedra = w.pracoviste[0].nazev || "někde jinde";
+       });
+       req.detailsRetrieved = true;
+       distinguishPerson(sender, req);
+     })
+     .catch(err => stagError(sender, err));
+   })
+   .catch(err => stagError(sender, err));
+ };
+
+ const distinguishPerson = (sender, req) => {
+
+   let filter, msgPool, detailsHandler;
+
+   if (req.params.role === "student") {
+     filter = "osCislo";
+     msgPool = "STUDENT_MULTIPLE_MATCH";
+     detailsHandler = getStudentDetails;
+   } else if (req.params.role === "teacher") {
+     filter = "ucitIdno";
+     msgPool = "TEACHER_MULTIPLE_MATCH";
+     detailsHandler = getTeacherDetails;
+   }
+
+   if (req.detailsRetrieved) {
+
+     let criteriaPool = FILTER_CRITERIA[req.params.role];
+
+     // find first unique property to user to pick from
+     let criteriaIndex = criteriaPool
+       .map((c, i) => {
+         return req.data.map(s => {
+           return s[criteriaPool[i]];
+         }).isUnique()
+       })
+       .indexOf(true);
+
+     let criteria = criteriaPool[criteriaIndex];
+
+     req.requirement = filter;
+     req.options = req.data
+       .map(s => {
+         return {
+           msgKeyword: s[criteria],
+           dataFilter: filter,
+           param: s[filter]
+         }
+       });
+     let optionMsgs = req.options.map(o => o.msgKeyword);
+     let options = joinMultipleSubject(optionMsgs).capitalize();
+     pending.enqueueMessage(sender, req);
+
+     let message = reply(MSG[msgPool][criteria], {options});
+     messenger.sendText(message, sender);
+
+   } else {
+     detailsHandler(sender, req);
+   }
+ };
+
+ const distinguishRoles = (sender, req) => {
+
+   let {students, teachers} = req.data;
+
+   if (students.length > 0 && teachers.length > 0) {
+
+     // both student(s) and teacher(s) found
+     // role need to be distinguished
+
+     req.requirement = "role";
+     req.options = [
+       {msgKeyword: "student", dataFilter: "students", param: "student"},
+       {msgKeyword: "učitel", dataFilter: "teachers", param: "teacher"}
+     ];
+     pending.enqueueMessage(sender, req);
+     messenger.sendText("Myslíš studenta nebo učitele?", sender);
+
+   } else {
+
+     // flatten both student and teacher results into one array
+     req.data = [...students, ...teachers];
+
+     if (students.length > 0 && teachers.length === 0) {
+       req.params.role = "student";
+     } else if (students.length === 0 && teachers.length > 0) {
+       req.params.role = "teacher";
+     }
+
+     distinguishPersons(sender, req);
+   }
+
+ };
+
+ const distinguishPersons = exports.distinguishPersons = (sender, req) => {
+
+   if (req.data.length === 0) {
+     noPersonFound(sender, req);
+   } else if (req.data.length === 1) {
+     personFound(sender, req);
+   } else {
+     if (req.params.role) {
+       if (req.params.role === "student") {
+         distinguishPerson(sender, req);
+       } else if (req.params.role === "teacher") {
+         distinguishPerson(sender, req);
+       }
+     } else {
+       distinguishRoles(sender, req);
+     }
+   }
+
+ };
+
+ const getRequestAddressesForID = rolesPool => {
+   let urls;
+
+   if (rolesPool === "all") {
+     urls = [
+       "najdiStudentyPodleJmena",
+       "najdiUcitelePodleJmena"
+     ];
+   } else if (rolesPool === "teachers") {
+     urls = [
+       "najdiUcitelePodleJmena"
+     ];
+   } else { // student is implicit
+     urls = [
+       "najdiStudentyPodleJmena"
+     ];
+   }
+
+   return urls;
+ };
+
+ const identifyPerson = exports.identifyPerson = (sender, entities, req, rolesPool) => {
+   if (isNameComplete(entities)) {
+
+     let personName = {
+       jmeno: encodeURI(stem(entities.first_name)),
+       prijmeni: encodeURI(stem(entities.last_name))
+     };
+
+     let addresses = getRequestAddressesForID(rolesPool);
+
+     Promise
+       .all(addresses.map(a => stag.request(a, personName)))
+       .then(res => {
+
+         req.fullfilledCallback = req.handler;
+         req.handler = "distinguishPersons";
+
+         if (rolesPool === "all") {
+
+           req.data = {
+             students: res[0].student,
+             teachers: res[1].ucitel
+           };
+
+           distinguishRoles(sender, req);
+
+         } else if (rolesPool === "teachers") {
+           req.params.role = "teacher";
+           req.data = res[0].ucitel;
+           distinguishPersons(sender, req);
+         } else {
+           req.params.role = "student";
+           req.data = res[0].student;
+           distinguishPersons(sender, req);
+         }
+       })
+       .catch(err => stagError(sender, err));
+
+   } else if (isNameIncomplete(entities)) {
+     // not given full name
+     messenger.sendText(reply(MSG.INCOMPLETE_NAME), sender);
+   } else {
+     // no student name specified
+     // will be requested with own personal stag number
+     getStagInfo(sender, info => {
+       req.params.role = "self";
+       req.stagParams.osCislo = info.stag_number;
+       this[req.handler](sender, req);
      });
    }
  };
 
-// Resolve request apriori (one student found)
-const resolveRequest = (sender, pendingReq, fullfillment) => {
-  let requirement = pendingReq.requirement;
-  pendingReq.params[requirement] = fullfillment;
-  this[pendingReq.handler](sender, pendingReq.params, pendingReq.responseCallback);
-};
+/**
+ * Intents handlers
+ */
 
-const hasPersonEntity = entities => {
-  return entities.first_name && entities.last_name;
+exports.swearing = sender => {
+ messenger.sendText(reply(MSG.SWEARING), sender);
+ if (Math.random() < 0.5) {
+   giphy.random("sad", (err, res) => {
+     messenger.send(formatter.formatGIF(res.data), sender);
+   });
+ }
 };
 
 const hasDateEntity = entities => {
   return entities.day && entities.month;
 };
 
-const isWholeNameGiven = entities => {
-  return (entities.first_name && !entities.last_name) ||
-         (!entities.first_name && entities.last_name);
-};
-
 const identifyStudent = exports.identifyStudent = (sender, entities, pendingReq) => {
 
-  if (hasPersonEntity(entities)) {
+  if (isNameComplete(entities)) {
     let name = {};
     name["jmeno"] = encodeURI(stem(entities.first_name));
     name["prijmeni"] = encodeURI(stem(entities.last_name));
@@ -206,7 +447,7 @@ const identifyStudent = exports.identifyStudent = (sender, entities, pendingReq)
         messenger.sendText("Žádného takového studenta jsem nenašel, sorry ☹️", sender);
       }
     });
-  } else if (isWholeNameGiven(entities)) {
+  } else if (isNameIncomplete(entities)) {
     // not given full name
     messenger.sendText("Budu potřebovat celé jméno studenta 😇", sender);
   } else {
@@ -220,7 +461,7 @@ const identifyStudent = exports.identifyStudent = (sender, entities, pendingReq)
 
 const identifyTeacher = exports.identifyTeacher = (sender, entities, pendingReq) => {
 
-  if (hasPersonEntity(entities)) {
+  if (isNameComplete(entities)) {
     let name = {};
     name["jmeno"] = encodeURI(stem(entities.first_name));
     name["prijmeni"] = encodeURI(stem(entities.last_name));
@@ -247,7 +488,7 @@ const identifyTeacher = exports.identifyTeacher = (sender, entities, pendingReq)
         messenger.sendText("Žádného takového učitele jsem nenašel, sorry ☹️", sender);
       }
     });
-  } else if (isWholeNameGiven(entities)) {
+  } else if (isNameIncomplete(entities)) {
     // not given full name
     messenger.sendText("Budu potřebovat celé jméno učitele 😇", sender);
   } else {
@@ -260,14 +501,6 @@ exports.noMatch = sender => {
   messenger.send(formatter.formatHelp(
     `Já nevím, co tím myslíš 😢\nKoukni na seznam dostupných příkazů 👇`), sender);
   };
-
-exports.help = sender => {
-  messenger.send(formatter.formatHelp(reply("HELP")), sender);
-};
-
-exports.upSearch = sender => {
-  messenger.send(formatter.formatUPSearch(), sender);
-};
 
 const getVocative = (sender, cb) => {
   messenger
@@ -282,12 +515,18 @@ const getVocative = (sender, cb) => {
 
 exports.greeting = sender => {
   getVocative(sender, addressing => {
-    messenger.sendText(`Taky tě zdravím, ${addressing} 😜`, sender);
+    messenger.sendText(reply(MSG.GREETING, {addressing}), sender);
   });
 };
 
 exports.thanks = sender => {
   messenger.sendText(`Není zač 😇`, sender);
+};
+
+exports.headOrTail = sender => {
+  var randBool = Math.random() >= 0.5;
+  let message = randBool ? "Panna 🙅‍" : "Orel 🦅";
+  messenger.sendText(message, sender);
 };
 
 exports.weekOddOrEven = sender => {
@@ -298,52 +537,63 @@ exports.weekOddOrEven = sender => {
   );
 };
 
-const reqThesis = exports.reqThesis = (sender, params, cb) => {
-  stagRequest(sender, "getKvalifikacniPrace", params, res => {
+const reqThesis = exports.reqThesis = (sender, req) => {
+  stagRequest(sender, "getKvalifikacniPrace", req.stagParams, res => {
     let theses = res.kvalifikacniPrace;
-    cb(theses);
+    req.responseCallback(theses, req);
   });
 };
 
 exports.thesis = (sender, entities) => {
 
-  identifyStudent(sender, entities, {
+  identifyPerson(sender, entities, {
     "params": {},
-    "requirement": "osCislo",
+    "stagParams": {},
     "handler": "reqThesis",
-    responseCallback: theses => {
+    responseCallback: (theses, req) => {
+      let message;
+      let role = req.params.role;
+      let doesExist = (theses.length > 0 ? "THESIS" : "NO_THESIS");
+
+      if (role === "self") {
+        message = reply(MSG[doesExist][role]);
+      } else if (role === "student") {
+        let name = req.params.person.first_name;
+        message = reply(MSG[doesExist][role], {name});
+      }
+
       if (theses.length > 0) {
-        messenger.sendTextPromise("Hodně štěstí s psaním ✊", sender)
-        .then(messenger.sendPromise(formatter.formatThesis(theses), sender));
+        messenger.sendTextPromise(message, sender)
+          .then(messenger.sendPromise(formatter.formatThesis(theses), sender));
       } else {
-        messenger.sendText("Nemáš tu žádnou práci. Pohoda, ne? 😏", sender);
+        messenger.sendText(message, sender);
       }
     }
-  });
+  },
+  "students");
 
 };
 
-const reqSchedule = exports.reqSchedule = (sender, action, params, cb) => {
-  stagRequest(sender, action, params, res => {
+const reqSchedule = exports.reqSchedule = (sender, req) => {
+  if (req.params.role === "student" || req.params.role === "self") {
+    req.action = "getRozvrhByStudent";
+    req.formatterCallback = "formatStudentSchedule";
+  } else if (req.params.role === "teacher") {
+    req.action = "getRozvrhByUcitel";
+    req.formatterCallback = "formatTeacherSchedule";
+  }
+  stagRequest(sender, req.action, req.stagParams, res => {
     let events = res.rozvrhovaAkce;
-    cb(events);
+    req.responseCallback(events, req);
   });
 };
 
-const reqStudentSchedule = exports.reqStudentSchedule = (sender, params, cb) => {
-  reqSchedule(sender, "getRozvrhByStudent", params, cb);
-};
-
-const reqTeacherSchedule = exports.reqTeacherSchedule = (sender, params, cb) => {
-  reqSchedule(sender, "getRozvrhByUcitel", params, cb);
-};
-
-exports.dateSchedule = (sender, entities) => {
+exports.schedule = (sender, entities, params) => {
 
   let request = {
     "params": {},
-    "requirement": "osCislo",
-    "handler": "reqStudentSchedule"
+    "stagParams": {},
+    "handler": "reqSchedule"
   };
 
   let dateStr;
@@ -356,62 +606,49 @@ exports.dateSchedule = (sender, entities) => {
 
   let dateObj = moment(dateStr, "DD.MM.YYYY");
 
-  request.responseCallback = events => {
+  request.responseCallback = (events, req) => {
     if (events.length === 0) {
-      messenger.sendText(`${replyDate(dateObj).capitalize()} nemáš školu 😅`, sender);
+      let message;
+      let role = req.params.role;
+      let date = formatDate(dateObj);
+
+      if (role === "self") {
+        date = date.capitalize();
+        message = reply(MSG.NO_SCHEDULE[role], {date});
+      } else {
+        if (role === "student") {
+          let name = req.params.person.first_name;
+          message = reply(MSG.NO_SCHEDULE[role], {date, name});
+        } else if (role === "teacher") {
+          let addressing = getTeacherAddressing(req.data[0]).capitalize();
+          let name = `${addressing} ${req.params.person.last_name}`;
+
+          message = reply(MSG.NO_SCHEDULE[role], {date, name});
+        }
+      }
+
+      messenger.sendText(message, sender);
     } else {
-      messenger.send(formatter.formatSchedule(events), sender);
+      messenger.send(formatter[req.formatterCallback](events), sender);
     }
   };
 
-  request.params["datumOd"] = request.params["datumDo"] = dateStr;
+  request.stagParams["datumOd"] = request.stagParams["datumDo"] = dateStr;
 
-  identifyStudent(sender, entities, request);
-
-};
-
-exports.dateTeacherSchedule = (sender, entities) => {
-
-  let request = {
-    "params": {},
-    "requirement": "ucitIdno",
-    "handler": "reqTeacherSchedule"
-  };
-
-  let dateStr;
-  if (hasDateEntity(entities)) {
-    dateStr = getDateStr(entities);
-  } else {
-    // fallback to today schedule
-    dateStr = getTodayDateStr();
-  }
-
-  let dateObj = moment(dateStr, "DD.MM.YYYY");
-
-  request.responseCallback = events => {
-    if (events.length === 0) {
-      messenger.sendText(`${replyDate(dateObj).capitalize()} neučí 🤔`, sender);
-    } else {
-      messenger.send(formatter.formatTeacherSchedule(events), sender);
-    }
-  };
-
-  request.params["datumOd"] = request.params["datumDo"] = dateStr;
-
-  identifyTeacher(sender, entities, request);
+  identifyPerson(sender, entities, request, params.rolesPool);
 
 };
 
 exports.nextSemesterBeginning = (sender, entities) => {
 
-  identifyStudent(sender, entities, {
+  identifyPerson(sender, entities, {
     params: {},
-    requirement: "osCislo",
-    handler: "reqStudentSchedule",
-    responseCallback: events => {
+    stagParams: {},
+    handler: "reqSchedule",
+    responseCallback: (events, req) => {
       let message;
       if (events.length === 0) {
-        message = "Nemáš žádné zapsané předměty 😅";
+        message = reply(MSG.NO_REGISTERED_SUBJECTS[req.params.role]);
       } else {
         let now = moment();
         let max = moment("3000", "YYYY");
@@ -425,30 +662,39 @@ exports.nextSemesterBeginning = (sender, entities) => {
 
         // no future event was found
         if (max.isSame(beginning)) {
-          message = "Žádný předmět, který máš zapsaný nemá rozvrh 🧐";
-        } else if (beginning.isSameOrBefore(now)) {
-          message = `Semestr ti začal ${replyDate(beginning)} 🙂`;
+          message = reply(MSG.NO_REGISTERED_SUBJECTSD_SUBJECTS[req.params.role]);
         } else {
-          message = `Semestr ti začíná ${replyDate(beginning)} 🙂`;
+          let strParams = {}
+          strParams.date = formatDate(beginning);
+          if (req.params.person) {
+            strParams.name = req.params.person.first_name;
+          }
+
+          if (beginning.isSameOrBefore(now)) {
+            message = reply(MSG.SEMESTER_STARTED[req.params.role], strParams);
+          } else {
+            message = reply(MSG.SEMESTER_WILL_START[req.params.role], strParams);
+          }
         }
 
         messenger.sendText(message, sender);
       }
     }
-  });
+  },
+  "students");
 
 };
 
 exports.nextSemesterEnd = (sender, entities) => {
 
-  identifyStudent(sender, entities, {
+  identifyPerson(sender, entities, {
     params: {},
-    requirement: "osCislo",
-    handler: "reqStudentSchedule",
-    responseCallback: events => {
+    stagParams: {},
+    handler: "reqSchedule",
+    responseCallback: (events, req) => {
       let message;
       if (events.length === 0) {
-        message = "Nemáš žádné zapsané předměty 😅";
+        message = reply(MSG.NO_REGISTERED_SUBJECTS[req.params.role]);
       } else {
         let now = moment();
         let min = moment("1000", "YYYY");
@@ -461,17 +707,25 @@ exports.nextSemesterEnd = (sender, entities) => {
 
         // no future event was found
         if (min.isSame(end)) {
-          message = "Žádný předmět, který máš zapsaný nemá rozvrh 🧐";
-        } else if (end.isSameOrBefore(now)) {
-          message = `Semestr ti už skončil ${replyDate(end)} 🙂`;
+          message = reply(MSG.NO_REGISTERED_SUBJECTSD_SUBJECTS[req.params.role]);
         } else {
-          message = `Semestr ti končí ${replyDate(end)} 🙂`;
+          let strParams = {}
+          strParams.date = formatDate(end);
+          if (req.params.person) {
+            strParams.name = req.params.person.first_name;
+          }
+          if (end.isSameOrBefore(now)) {
+            message = reply(MSG.SEMESTER_ENDED[req.params.role], strParams);
+          } else {
+            message = reply(MSG.SEMESTER_WILL_END[req.params.role], strParams);
+          }
         }
 
         messenger.sendText(message, sender);
       }
     }
-  });
+  },
+  "students");
 
 };
 
@@ -489,9 +743,9 @@ exports.remainingCredits = sender => {
           let remainingCredits = numOfCredits - acquiredCredits;
           let message;
           if (remainingCredits === 0) {
-            message = `Získal jsi všechny potřebné kredity, gratuluju! 👏`;
+            message = reply(MSG.ALL_CREDITS_AQUIRED);
           } else {
-            message = `Ještě zbývá získat ${remainingCredits} kreditů ze ${numOfCredits} potřebných 👏`;
+            message = reply(MSG.REMAINING_CREDITS, {remainingCredits, numOfCredits});
           }
           messenger.sendText(message, sender);
         }, auth);
@@ -506,31 +760,16 @@ exports.numberOfCreditsCurrentSemester = sender => {
     let stagNumberParam = {"osCislo": info.stag_number};
     let auth = {"user": info.stag_username, "password": info.stag_password };
     stagRequest(sender, "getStudentPredmetyAbsolvoval", {}, marks => {
-      let acquiredCredits = marks.predmetAbsolvoval
+      let credits = marks.predmetAbsolvoval
         .filter(sub => sub.rok === ROK && sub.semestr === currentSemester)
         .reduce((sum, sub) => { return sum += sub.pocetKreditu }, 0);
-      messenger.sendText(`Získáš ${acquiredCredits} kreditů ze zapsaných předmětů v tomto semestru`, sender);
+      messenger.sendText(reply(MSG.CREDITS_TO_AQUIRE, {credits}), sender);
     }, auth);
   }, db.GET_AUTH);
 };
 
-const SUMMER_SEMESTER = {
-  START: moment("1.2.", "D.M."),
-  END  : moment("31.8.", "D.M.")
-};
-
-const getCurrentSemester = () => {
-  if (moment().isBetween(SUMMER_SEMESTER.START, SUMMER_SEMESTER.END)) {
-    return "LS";
-  } else {
-    return "ZS";
-  }
-};
-
-const ROK = "2017";
-
-const getAcademicalYear = () => {
-  return `${ROK}/${parseInt(ROK.slice(2)) + 1}`;
+const getAcademicalYear = year => {
+  return `${year}/${parseInt(year.slice(2)) + 1}`;
 };
 
 const SEMESTERS = {
@@ -539,48 +778,42 @@ const SEMESTERS = {
 };
 
 const numberOfExams = exports.numberOfExams = (sender, entities, params) => {
-  let currentSemester = getCurrentSemester();
-  let semester = params.semester || currentSemester;
   getStagInfo(sender, info => {
-    let stagNumberParam = {"osCislo": info.stag_number};
-    let auth = {"user": info.stag_username, "password": info.stag_password };
-    let subjectsParam = {"osCislo": info.stag_number, "semestr": semester};
+    let today = moment().format("DD.MM.YYYY");
+    stagRequest(sender, "getKalendarRoku", {"datum": today}, calendar => {
 
-    // TODO: Na SEMESTR a ROK bude API !
+      let year = calendar.kalendarItem[0].rokPlatnosti;
+      let semestrAbbr = params.semester || calendar.kalendarItem[0].typRozvrhDne;
 
-    stagRequest(sender, "getZnamkyByStudent", stagNumberParam, subjects => {
-      let numOfExams = subjects.student_na_predmetu
-        .filter(s => {
-          return s.rok === ROK &&
-                 s.semestr === semester &&
-                 s.zk_typ_hodnoceni === "Známkou" &&
-                 !s.zk_hodnoceni;
-        })
-        .length;
-      let message;
-      let beginning;
-      if (!params.semester || params.semester === currentSemester) {
-        beginning = `V tomto ${SEMESTERS[semester]}`;
-      } else {
-        if (semester > currentSemester) {
-          beginning = `V minulém ${SEMESTERS[semester]}`;
-        } else if (semester < currentSemester) {
-          beginning = `V dalším ${SEMESTERS[semester]}`;
+      let stagNumberParam = {"osCislo": info.stag_number};
+      let auth = {"user": info.stag_username, "password": info.stag_password };
+      let subjectsParam = {"osCislo": info.stag_number, "semestr": semestrAbbr};
+
+      stagRequest(sender, "getZnamkyByStudent", stagNumberParam, subjects => {
+        let numOfExams = subjects.student_na_predmetu
+          .filter(s => {
+            return s.rok === year &&
+                   s.semestr === semestrAbbr &&
+                   s.zk_typ_hodnoceni === "Známkou" &&
+                   !s.zk_hodnoceni;
+          })
+          .length;
+
+        let academicalYear = getAcademicalYear(year);
+        let semester = SEMESTERS[semestrAbbr];
+
+        let message;
+
+        if (numOfExams) {
+          message = reply(MSG.REMAINING_EXAMS, {semester, academicalYear, numOfExams});
+        } else {
+          message = reply(MSG.ALL_EXAMS_PASSED, {semester, academicalYear});
         }
-      }
-      if (numOfExams) {
-        message = `${beginning} semestru ${getAcademicalYear()} zbývá udělat ${numOfExams} zkoušek 🤓`
-      } else {
-        message = `${beginning} semestru ${getAcademicalYear()} máš všechny zkoušky hotové 😎`;
-      }
-      messenger.sendText(message, sender);
-    }, auth);
-  }, db.GET_AUTH);
-};
+        messenger.sendText(message, sender);
+      }, auth);
 
-const ENROLL_MSG = {
-  "true": "odepsání",
-  "false": "zapsání"
+    })
+  }, db.GET_AUTH);
 };
 
 exports.examsDates = (sender, entities, params) => {
@@ -611,8 +844,8 @@ exports.examsDates = (sender, entities, params) => {
         pending.enqueuePostback(sender, pendingReq);
         messenger.send(formatter.formatExamsDates(datesGroupedBySubject, enrolled), sender);
       } else {
-        let action = ENROLL_MSG[enrolled];
-        messenger.sendText(`Žádný termín k ${action} jsem nenašel 😊`, sender);
+        let msgPool = enrolled ? "NO_EXAM_TO_WITHDRAW" : "NO_EXAM_TO_REGISTER";
+        messenger.sendText(reply(MSG[msgPool]), sender);
       }
     }, auth);
   }, db.GET_AUTH);
@@ -643,14 +876,14 @@ const examTermChange = (sender, term, url, msgOK, msgERR) => {
 };
 
 exports.examDateRegister = (sender, params) => {
-  let msgOK = "Zapsal jsem tě! Hodně štěstí 😉";
-  let msgERR = "Nepovedlo se mi tě zapsat, sorry 😭";
+  let msgOK = reply(MSG.EXAM_REGISTER_OK);
+  let msgERR = reply(MSG.EXAM_REGISTER_ERR);;
   examTermChange(sender, params.date, "zapisStudentaNaTermin", msgOK, msgERR);
 };
 
 exports.examDateWithdraw = (sender, params) => {
-  let msgOK = "Odhlásil jsem tě z termínu 😉";
-  let msgERR = "Nepovedlo se mi tě odhlásit z termínu, sorry 😭";
+  let msgOK = reply(MSG.EXAM_DEREGISTER_OK);
+  let msgERR = reply(MSG.EXAM_DEREGISTER_ERR);
   // must be first one since student can register only one term
   let date = params.dates[0];
   examTermChange(sender, date, "odhlasStudentaZTerminu", msgOK, msgERR);
@@ -699,8 +932,7 @@ const getDateStr = entities => {
   }
 };
 
-exports.firstLessonBeginning = (sender, entities) => {
-
+exports.schoolDayDuration = (sender, entities, params) => {
   let dateStr;
   if (hasDateEntity(entities)) {
     dateStr = getDateStr(entities);
@@ -711,142 +943,44 @@ exports.firstLessonBeginning = (sender, entities) => {
 
   let dateObj = moment(dateStr, "DD.MM.YYYY");
 
-  identifyStudent(sender, entities, {
-    params: {
+  identifyPerson(sender, entities, {
+    params: {},
+    stagParams: {
       "datumOd": dateStr,
       "datumDo": dateStr
     },
-    requirement: "osCislo",
-    handler: "reqStudentSchedule",
-    responseCallback: events => {
+    handler: "reqSchedule",
+    responseCallback: (events, req) => {
       let message;
-      if (events.length === 0) {
-        message = `${replyDate(dateObj).capitalize()} nemáš školu 😅`;
+      let msgPool;
+      let strParams = {}
+      let role = req.params.role;
+      strParams.date = formatDate(dateObj);
+
+      if (req.params.person) {
+        strParams.name = req.params.person.first_name;
       } else {
-        let time = dayBeginningPredicate(events);
-        message = `První hodina ${replyDate(dateObj)} začíná v ${time} 😩`;
+        strParams.date = strParams.date.capitalize();
       }
+
+      if (events.length === 0) {
+        msgPool = "NO_SCHEDULE";
+      } else {
+
+        if (params.duration === "start") {
+          strParams.time = dayBeginningPredicate(events);
+          msgPool = "SCHOOL_DAY_START";
+        } else if (params.duration === "end") {
+          strParams.time = dayEndPredicate(events);
+          msgPool = "SCHOOL_DAY_END";
+        }
+
+      }
+
+      message = reply(MSG[msgPool][role], strParams);
       messenger.sendText(message, sender);
     }
-  });
+  },
+  "students");
 
-};
-
-exports.lastLessonEnd = (sender, entities) => {
-
-  let dateStr;
-  if (hasDateEntity(entities)) {
-    dateStr = getDateStr(entities);
-  } else {
-    // fallback to today schedule
-    dateStr = getTodayDateStr();
-  }
-
-  let dateObj = moment(dateStr, "DD.MM.YYYY");
-
-  identifyStudent(sender, entities, {
-    params: {
-      "datumOd": dateStr,
-      "datumDo": dateStr
-    },
-    requirement: "osCislo",
-    handler: "reqStudentSchedule",
-    responseCallback: events => {
-      let message;
-      if (events.length === 0) {
-        message = `${replyDate(dateObj).capitalize()} nemáš školu 😅`;
-      } else {
-        let time = dayEndPredicate(events);
-        message = `Poslední hodina ${replyDate(dateObj)} končí v ${time} 😩`;
-      }
-      messenger.sendText(message, sender);
-    }
-  });
-
-};
-
-
-
-
-
-
-
-
-
-
-
-/**
- * OLD
- */
-
-
-exports.subject = (sender, stag_params) => {
-
-  let params = {
-    katedra: stag_params.katedra,
-    zkratka: stag_params.zkratka
-  };
-
-  stag.request("getPredmetInfo", params)
-      .then(res => {
-
-        let props = res.predmetInfo;
-
-        messenger.send(formatter.formatSubject(props), sender);
-
-      })
-      .catch(err => {
-        stagError(err);
-      });
-
-};
-
-const MULTIPLE_MATCH_QUESTION = [
-  [
-    "Jaký",
-    "Jakou",
-    "Jaké"
-  ],
-  [
-    "studuje",
-    "má"
-  ],
-  [
-    "obor",
-    "ročník",
-    "typ studia",
-    "formu",
-    "osobní číslo"
-  ]
-];
-
-const MULTIPLE_MATCH_DISTINCT = {
-  thesis: [
-    [0, 0, 0], [0, 0, 1], [0, 0, 2], [1, 0, 3], [2, 1, 4]
-  ]
-};
-
-const firstDistinctCol = arr => {
-  for (let i = 0; i < arr[0].length; i++) {
-    for (let j = 1; j < arr.length; j++) {
-      if (arr[j][i] !== arr[0][i]) return [arr.map(item => item[i]), i];
-    }
-  }
-  return [];
-};
-
-const joinMultipleSubject = arr => {
-  return [
-    ...arr.slice(0, arr.length - 2),
-    arr.slice(-2).join(" nebo ")
-  ].join(", ")
-};
-
-const multipleMatch = (sender, opts, i, intent) => {
-  let question = MULTIPLE_MATCH_DISTINCT[intent][i]
-    .map((val, i) => MULTIPLE_MATCH_QUESTION[i][val])
-    .join(" ")
-  messenger.send({
-    text: `${question}? ${joinMultipleSubject(opts).capitalize()}? 🤔`
-  }, sender);
 };

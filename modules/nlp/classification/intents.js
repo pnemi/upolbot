@@ -19,6 +19,9 @@ const intents = {
   "Thanks": {
     handler: "thanks"
   },
+  "HeadOrTail": {
+    handler: "headOrTail"
+  },
   "IsWeekOddOrEven": {
     handler: "weekOddOrEven"
   },
@@ -29,28 +32,30 @@ const intents = {
       "last_name": Entity.LAST_NAME
     }
   },
-  "GetTodaySchedule": {
-    handler: "todaySchedule",
-    entities: {
-      "first_name": Entity.FIRST_NAME,
-      "last_name": Entity.LAST_NAME
-    }
-  },
-  "GetTomorrowSchedule": {
-    handler: "tomorrowSchedule",
-    entities: {
-      "first_name": Entity.FIRST_NAME,
-      "last_name": Entity.LAST_NAME
-    }
-  },
-  "GetScheduleOnDate": {
-    handler: "dateSchedule",
+  "GetSchedule": {
+    handler: "schedule",
     entities: {
       "first_name": Entity.FIRST_NAME,
       "last_name": Entity.LAST_NAME,
       "day": Entity.DAY,
       "month": Entity.MONTH,
       "year": Entity.YEAR
+    },
+    params: {
+      "rolesPool": "all"
+    }
+  },
+  "GetTeacherSchedule": {
+    handler: "schedule",
+    entities: {
+      "first_name": Entity.FIRST_NAME,
+      "last_name": Entity.LAST_NAME,
+      "day": Entity.DAY,
+      "month": Entity.MONTH,
+      "year": Entity.YEAR
+    },
+    params: {
+      "rolesPool": "teachers"
     }
   },
   "GetSemesterBeginning": {
@@ -108,33 +113,29 @@ const intents = {
     }
   },
   "GetBeginningOfTheFirstLessonOfTheDay": {
-    handler: "firstLessonBeginning",
+    handler: "schoolDayDuration",
     entities: {
       "first_name": Entity.FIRST_NAME,
       "last_name": Entity.LAST_NAME,
       "day": Entity.DAY,
       "month": Entity.MONTH,
       "year": Entity.YEAR
+    },
+    params: {
+      "duration": "start"
     }
   },
   "GetEndOfTheLastLessonOfTheDay": {
-    handler: "lastLessonEnd",
+    handler: "schoolDayDuration",
     entities: {
       "first_name": Entity.FIRST_NAME,
       "last_name": Entity.LAST_NAME,
       "day": Entity.DAY,
       "month": Entity.MONTH,
       "year": Entity.YEAR
-    }
-  },
-  "GetTeacherScheduleOnDate": {
-    handler: "dateTeacherSchedule",
-    entities: {
-      "first_name": Entity.FIRST_NAME,
-      "last_name": Entity.LAST_NAME,
-      "day": Entity.DAY,
-      "month": Entity.MONTH,
-      "year": Entity.YEAR
+    },
+    params: {
+      "duration": "end"
     }
   },
   "Swearing": {
