@@ -5,3 +5,7 @@ String.prototype.capitalize = function() {
 Array.prototype.isUnique = function() {
   return (new Set(this)).size === this.length;
 };
+
+Array.prototype.flatMap = function(lambda) {
+  return Array.prototype.concat.apply([], this.map(lambda));
+};

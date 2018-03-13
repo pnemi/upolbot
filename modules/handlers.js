@@ -755,16 +755,21 @@ exports.remainingCredits = sender => {
 };
 
 exports.numberOfCreditsCurrentSemester = sender => {
-  let currentSemester = getCurrentSemester();
   getStagInfo(sender, info => {
-    let stagNumberParam = {"osCislo": info.stag_number};
-    let auth = {"user": info.stag_username, "password": info.stag_password };
-    stagRequest(sender, "getStudentPredmetyAbsolvoval", {}, marks => {
-      let credits = marks.predmetAbsolvoval
-        .filter(sub => sub.rok === ROK && sub.semestr === currentSemester)
-        .reduce((sum, sub) => { return sum += sub.pocetKreditu }, 0);
-      messenger.sendText(reply(MSG.CREDITS_TO_AQUIRE, {credits}), sender);
-    }, auth);
+    let today = moment().format("DD.MM.YYYY");
+    stagRequest(sender, "getKalendarRoku", {"datum": today}, calendar => {
+      let year = calendar.kalendarItem[0].rokPlatnosti;
+      let semestrAbbr = calendar.kalendarItem[0].typRozvrhDne;
+
+      let stagNumberParam = {"osCislo": info.stag_number};
+      let auth = {"user": info.stag_username, "password": info.stag_password };
+      stagRequest(sender, "getStudentPredmetyAbsolvoval", {}, marks => {
+        let credits = marks.predmetAbsolvoval
+          .filter(sub => sub.rok === year && sub.semestr === semestrAbbr)
+          .reduce((sum, sub) => { return sum += sub.pocetKreditu }, 0);
+        messenger.sendText(reply(MSG.CREDITS_TO_AQUIRE, {credits}), sender);
+      }, auth);
+    });
   }, db.GET_AUTH);
 };
 

@@ -6,10 +6,6 @@ moment.locale("cs");
 
 const IS_NUMERIC = /^\d+$/;
 
-Array.prototype.flatMap = function(lambda) {
-  return Array.prototype.concat.apply([], this.map(lambda));
-};
-
 const MONTHS = [
   {
     expr: "Leden",
@@ -124,7 +120,9 @@ const TEMPORAL_REL_EXPRS = [
 ];
 
 const MONTH_POS = new Set("NN");
-const DAY_POS = new Set("NN");
+const DAY_POS = new Set("NN", "Db");
+
+const SIMILARITY_THRESHOLD = 0.4;
 
 exports.normalizeTime = (entities, tags) => {
   if (!entities.day && !entities.month) {
@@ -142,14 +140,18 @@ exports.normalizeTime = (entities, tags) => {
       return cur.score > max.score ? cur : max;
     }, scores[0]);
 
-    let date = TEMPORAL_ABS_EXPRS[result.iTemp].getNorm();
+    if (result >= SIMILARITY_THRESHOLD) {
+      let date = TEMPORAL_ABS_EXPRS[result.iTemp].getNorm();
 
-    if (date.isBefore(moment())) {
-      date = date.add(1, "week");
+      if (date.isBefore(moment())) {
+        date = date.add(1, "week");
+      }
+
+      entities.day = date.format("D");
+      entities.month = date.format("M");
+
     }
 
-    entities.day = date.format("D");
-    entities.month = date.format("M");
   } else if (!IS_NUMERIC.test(entities.month)) {
     let similarity = MONTHS.map(m => dice(m.expr, entities.month));
     let mostSimilar = similarity.indexOf(Math.max(...similarity));
