@@ -18,7 +18,7 @@ const
   DATE_MM         = "(0?[1-9]|1[0-2])(\\.)",
   DATE_YYYY       = "(\\s?[0-9]{4})?",
   DATE_MONTH_ABBR = "((?:led|úno|bře|dub|kvě|čer|srp|zář|říj|lis|pro)[^\\s]*)",
-  TIME_DELIM      = "[:.]",
+  TIME_DELIM      = "([:.])",
   TIME_HH         = "([0-9]{1,2})",
   TIME_MM         = "([0-9]{2})",
   TIME_HOUR       = "([0-9]{1,2})\\s?(?:(?:hodin|hod|h))",
@@ -133,7 +133,7 @@ const tokenize = (sentence, reduce = true) => {
         text = accents.remove(text);
 
         if (type !== Token.PROTECTED && stopwords.has(text)) {
-          text = null;
+          // text = null;
           type = Token.STOPWORD; // reclassify to stopword token
         } else {
           text = stem(text);
@@ -143,7 +143,7 @@ const tokenize = (sentence, reduce = true) => {
       // TODO: ...
       // token.department = match.matches[1];
       // token.subject = match.matches[2];
-    } else if (type === Token.DATE) {
+    } else if (type === Token.DATE || type === Token.TIME) {
       tokens.push(...match.matches
         .slice(1)
         .filter(m => m)

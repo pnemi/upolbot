@@ -821,33 +821,52 @@ const numberOfExams = exports.numberOfExams = (sender, entities, params) => {
   }, db.GET_AUTH);
 };
 
+const groupExamsTerms = terms => {
+  let options = {}
+  let types = {}
+
+  for (let i = 0; i < terms.length; i++) {
+  	let item = terms[i];
+  	let optKey = `${item.katedra}/${item.predmet}|${item.typTerminu}`;
+  	options[optKey] = options[optKey] || [];
+  	options[optKey].push(item);
+
+  	let formatKey = `${item.katedra}/${item.predmet}`;
+  	types[formatKey] = types[formatKey] || new Set();
+  	types[formatKey].add(item.typTerminu)
+  }
+
+  return {options, types};
+};
+
 exports.examsDates = (sender, entities, params) => {
   let enrolled = ("zapsan" in params && params.zapsan) || false;
   getStagInfo(sender, info => {
     let stagNumberParam = {"osCislo": info.stag_number};
     let auth = {"user": info.stag_username, "password": info.stag_password };
     stagRequest(sender, "getTerminyProStudenta", stagNumberParam, res => {
-      let datesGroupedBySubject = res.termin
+      let terms = res.termin
         .filter(d => {
           return d.zapsan === enrolled && d.lzeZapsatOdepsat;
-        })
-        .reduce(function (r, a) {
-          let key = a.katedra + "/" + a.predmet;
-          r[key] = r[key] || [];
-          r[key].push(a);
-          return r;
-        }, {});
-      let subjects = Object.keys(datesGroupedBySubject);
+        });
+      let {options, types} = groupExamsTerms(terms);
+      let subjects = Object.keys(options);
       if (subjects.length > 0) {
         let handler = enrolled ? "examDateWithdraw" : "examDates";
         let pendingReq = {
-          "options": datesGroupedBySubject,
+          "options": options,
           "params": {},
           "requirement": "dates",
           "handler": handler
         };
+        let msgFormat;
+        if (!enrolled) {
+          msgFormat = formatter.formatUnregisteredExams(types);
+        } else {
+          msgFormat = formatter.formatRegisteredExams(types, options);
+        }
         pending.enqueuePostback(sender, pendingReq);
-        messenger.send(formatter.formatExamsDates(datesGroupedBySubject, enrolled), sender);
+        messenger.send(msgFormat, sender);
       } else {
         let msgPool = enrolled ? "NO_EXAM_TO_WITHDRAW" : "NO_EXAM_TO_REGISTER";
         messenger.sendText(reply(MSG[msgPool]), sender);
@@ -858,6 +877,7 @@ exports.examsDates = (sender, entities, params) => {
 
 exports.examDates = (sender, params) => {
   let request = {
+    "params": {},
     "options": params.dates,
     "requirement": "date",
     "handler": "examDateRegister"
@@ -873,7 +893,7 @@ const examTermChange = (sender, term, url, msgOK, msgERR) => {
       "termIdno": term.termIdno
     };
     let auth = {"user": info.stag_username, "password": info.stag_password };
-    stagRequest(url, stagParams, res => {
+    stagRequest(sender, url, stagParams, res => {
       let message = (res === "OK" ? msgOK : msgERR);
       messenger.sendText(message, sender);
     }, auth);
@@ -882,7 +902,7 @@ const examTermChange = (sender, term, url, msgOK, msgERR) => {
 
 exports.examDateRegister = (sender, params) => {
   let msgOK = reply(MSG.EXAM_REGISTER_OK);
-  let msgERR = reply(MSG.EXAM_REGISTER_ERR);;
+  let msgERR = reply(MSG.EXAM_REGISTER_ERR);
   examTermChange(sender, params.date, "zapisStudentaNaTermin", msgOK, msgERR);
 };
 

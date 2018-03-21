@@ -161,6 +161,7 @@ class Perceptron {
 
       let featWeights = this.weights[feat];
 
+      // weighted sum of hidden layers
       for (let label in featWeights) {
         let weight = featWeights[label];
         scores[label] += value * weight;
