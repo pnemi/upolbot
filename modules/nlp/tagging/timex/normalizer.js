@@ -140,7 +140,7 @@ exports.normalizeTime = (entities, tags) => {
       return cur.score > max.score ? cur : max;
     }, scores[0]);
 
-    if (result >= SIMILARITY_THRESHOLD) {
+    if (result.score >= SIMILARITY_THRESHOLD) {
       let date = TEMPORAL_ABS_EXPRS[result.iTemp].getNorm();
 
       if (date.isBefore(moment())) {

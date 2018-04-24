@@ -985,7 +985,7 @@ exports.schoolDayDuration = (sender, entities, params) => {
       if (req.params.person) {
         strParams.name = req.params.person.first_name;
       } else {
-        strParams.date = strParams.date.capitalize();
+        // strParams.date = strParams.date.capitalize();
       }
 
       if (events.length === 0) {
