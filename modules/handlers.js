@@ -742,7 +742,7 @@ exports.remainingCredits = sender => {
             .reduce((sum, sub) => { return sum += sub.pocetKreditu }, 0);
           let remainingCredits = numOfCredits - acquiredCredits;
           let message;
-          if (remainingCredits === 0) {
+          if (remainingCredits <= 0) {
             message = reply(MSG.ALL_CREDITS_AQUIRED);
           } else {
             message = reply(MSG.REMAINING_CREDITS, {remainingCredits, numOfCredits});
