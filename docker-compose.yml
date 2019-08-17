@@ -1,0 +1,26 @@
+version: "3"
+services:
+  upolbot-app:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    volumes:
+      - .:/app
+    depends_on:
+      - upolbot-db
+    links:
+      - upolbot-db
+    ports:
+      - "1798:1798"
+    command: ["./docker/wait-for-postgres.sh", "upolbot-db", "5432", "yarn", "dev"]
+
+  upolbot-db:
+    image: postgres:12
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=docker
+      - POSTGRES_DB=upolbot
+    volumes:
+      - ./dbdata:/var/lib/postgresql/data

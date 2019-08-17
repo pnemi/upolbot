@@ -12,3 +12,4 @@ localtunnel.sh
 **/tagging/pos/corpus/*
 **/tagging/ner/model.json
 **/tagging/ner/corpus/*
+/dbdata/
